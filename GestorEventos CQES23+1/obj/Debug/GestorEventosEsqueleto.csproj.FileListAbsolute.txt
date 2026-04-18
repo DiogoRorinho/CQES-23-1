@@ -1,0 +1,7 @@
+C:\Users\diogo\OneDrive\Área de Trabalho\Uab\2 Semestre\Laboratorio de Desenvolvimento de Software\GestorEventos CQES23+1\GestorEventos CQES23+1\bin\Debug\GestorEventosEsqueleto.exe.config
+C:\Users\diogo\OneDrive\Área de Trabalho\Uab\2 Semestre\Laboratorio de Desenvolvimento de Software\GestorEventos CQES23+1\GestorEventos CQES23+1\bin\Debug\GestorEventosEsqueleto.exe
+C:\Users\diogo\OneDrive\Área de Trabalho\Uab\2 Semestre\Laboratorio de Desenvolvimento de Software\GestorEventos CQES23+1\GestorEventos CQES23+1\bin\Debug\GestorEventosEsqueleto.pdb
+C:\Users\diogo\OneDrive\Área de Trabalho\Uab\2 Semestre\Laboratorio de Desenvolvimento de Software\GestorEventos CQES23+1\GestorEventos CQES23+1\obj\Debug\GestorEventosEsqueleto.csproj.AssemblyReference.cache
+C:\Users\diogo\OneDrive\Área de Trabalho\Uab\2 Semestre\Laboratorio de Desenvolvimento de Software\GestorEventos CQES23+1\GestorEventos CQES23+1\obj\Debug\GestorEventosEsqueleto.csproj.CoreCompileInputs.cache
+C:\Users\diogo\OneDrive\Área de Trabalho\Uab\2 Semestre\Laboratorio de Desenvolvimento de Software\GestorEventos CQES23+1\GestorEventos CQES23+1\obj\Debug\GestorEventosEsqueleto.exe
+C:\Users\diogo\OneDrive\Área de Trabalho\Uab\2 Semestre\Laboratorio de Desenvolvimento de Software\GestorEventos CQES23+1\GestorEventos CQES23+1\obj\Debug\GestorEventosEsqueleto.pdb
