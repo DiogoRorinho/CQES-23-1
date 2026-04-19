@@ -1,4 +1,4 @@
-# Gestor de Eventos CQES
+# Gestor de Eventos CQES 23+1
 
 Aplicação de consola em C# para gestão de eventos, inscrições e relatórios, organizada num estilo MVC simples. O projecto está preparado para correr em **.NET Framework 4.8** e usa uma configuração baseada em `App.config` para a ligação a base de dados e para a pasta de geração de PDFs.
 
