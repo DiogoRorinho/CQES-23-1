@@ -88,7 +88,6 @@ O ficheiro `App.config` define:
 
 ## Observações sobre o estado atual
 
-- O repositório contém um projecto **sem ficheiro `.sln`**.
 - A aplicação está organizada como um esqueleto funcional, com várias operações ainda em implementação.
 - Os modelos e vistas usam `Console.WriteLine`, por isso a aplicação é de consola e não tem interface gráfica.
 
