@@ -14,7 +14,7 @@ namespace GestorEventosEsqueleto.Inscricoes {
                 Console.WriteLine(string.Format("{0} - {1}", evento.Id, evento.Nome));
             }
         }
-
+        // O método SolicitarDadosCriacao pode ser expandido para solicitar os dados necessários para criar uma inscrição, como o ID do evento e a quantidade de vagas.
         public void SolicitarDadosCriacao() {
             Console.WriteLine("Formulario de criacao de inscricao.");
         }
