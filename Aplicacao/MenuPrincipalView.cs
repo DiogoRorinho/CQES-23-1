@@ -7,15 +7,33 @@ namespace GestorEventosEsqueleto.Aplicacao {
         }
 
         public void MostrarMenuPrincipal() {
-            Console.WriteLine("Menu principal: Eventos | Inscricoes | Relatorios | Terminar");
+            Console.WriteLine();
+            Console.WriteLine("=== Menu principal ===");
+            Console.WriteLine("1 - Eventos");
+            Console.WriteLine("2 - Inscricoes");
+            Console.WriteLine("3 - Relatorios");
+            Console.WriteLine("0 - Terminar");
+            Console.Write("Escolha uma opcao: ");
         }
 
         public void MostrarOpcaoInvalida() {
             Console.WriteLine("Opcao invalida.");
         }
 
+        public void MostrarErroMenu(string mensagem) {
+            Console.WriteLine(string.Format("Erro no menu principal: {0}", mensagem));
+        }
+
         public void ApresentarMensagemEncerramento() {
             Console.WriteLine("Aplicacao terminada.");
+        }
+
+        public void MostrarMensagemRegresso() {
+            Console.WriteLine("A regressar ao menu principal.");
+        }
+
+        public void FinalizarOperacaoMenu() {
+            Console.WriteLine();
         }
     }
 }
