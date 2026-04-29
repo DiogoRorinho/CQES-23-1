@@ -1,3 +1,4 @@
+using System;
 using GestorEventosEsqueleto.Eventos;
 using GestorEventosEsqueleto.Inscricoes;
 using GestorEventosEsqueleto.Relatorios;
@@ -8,6 +9,7 @@ namespace GestorEventosEsqueleto.Aplicacao {
         private readonly EventoController eventoController;
         private readonly InscricaoController inscricaoController;
         private readonly RelatorioController relatorioController;
+        private bool programaAtivo;
 
         public AplicacaoController() {
             menuPrincipalView = new MenuPrincipalView();
@@ -30,37 +32,62 @@ namespace GestorEventosEsqueleto.Aplicacao {
         }
 
         public void IniciarPrograma() {
+            programaAtivo = true;
             menuPrincipalView.ApresentarBoasVindas();
-            menuPrincipalView.MostrarMenuPrincipal();
+
+            while (programaAtivo) {
+                try {
+                    menuPrincipalView.MostrarMenuPrincipal();
+                    SelecionarOpcao(Console.ReadLine());
+                }
+                catch (Exception ex) {
+                    menuPrincipalView.MostrarErroMenu(ex.Message);
+                }
+                finally {
+                    menuPrincipalView.FinalizarOperacaoMenu();
+                }
+            }
         }
 
         public void SelecionarOpcao(string opcao) {
-            switch (opcao) {
+            switch (NormalizarOpcao(opcao)) {
+                case "1":
                 case "Eventos":
                     eventoController.MostrarMenuModulo();
                     break;
+                case "2":
                 case "Inscricoes":
                     inscricaoController.MostrarMenuModulo();
                     break;
+                case "3":
                 case "Relatorios":
                     relatorioController.MostrarMenuModulo();
                     break;
+                case "0":
                 case "Terminar":
                     TerminarPrograma();
                     break;
                 default:
                     menuPrincipalView.MostrarOpcaoInvalida();
-                    menuPrincipalView.MostrarMenuPrincipal();
                     break;
             }
         }
 
         public void RegressarMenuPrincipal() {
-            menuPrincipalView.MostrarMenuPrincipal();
+            menuPrincipalView.MostrarMensagemRegresso();
         }
 
         public void TerminarPrograma() {
+            programaAtivo = false;
             menuPrincipalView.ApresentarMensagemEncerramento();
+        }
+
+        private string NormalizarOpcao(string opcao) {
+            if (string.IsNullOrWhiteSpace(opcao)) {
+                return string.Empty;
+            }
+
+            return opcao.Trim();
         }
     }
 }
