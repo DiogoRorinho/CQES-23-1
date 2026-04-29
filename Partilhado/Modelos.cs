@@ -28,7 +28,14 @@ namespace GestorEventosEsqueleto.Partilhado {
         public int IdEvento { get; set; }
         public string NomeParticipante { get; set; }
         public string EmailParticipante { get; set; }
+        public int IdadeParticipante { get; set; }
         public int Quantidade { get; set; }
+    }
+    
+    class ResultadoCriacaoInscricao {
+        public bool Sucesso { get; set; }
+        public string Mensagem { get; set; } = string.Empty;
+        public DocumentoPdf? BilhetePdf { get; set; }
     }
 
     class DadosRelatorio {
