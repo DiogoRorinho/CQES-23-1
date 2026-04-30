@@ -35,15 +35,15 @@ namespace GestorEventosEsqueleto.Relatorios {
         public void SelecionarOpcao(string opcao) {
             switch (NormalizarOpcao(opcao)) {
                 case "1":
-                case "Listagem de inscritos por evento":
+                //case "Listagem de inscritos por evento": - dispensável para o utilizador, pois a descrição do menu já é clara o suficiente
                     ApresentarRelatorioInscritosPorEvento();
                     break;
                 case "2":
-                case "Eventos com ocupacao":
+                //case "Eventos com ocupacao": - dispensável para o utilizador, pois a descrição do menu já é clara o suficiente
                     ApresentarRelatorioEventosComOcupacao();
                     break;
                 case "0":
-                case "Regressar ao menu principal":
+                //case "Regressar ao menu principal": - dispensável para o utilizador, pois a descrição do menu já é clara o suficiente
                     RegressarMenuPrincipal();
                     regressarMenuPrincipal = true;
                     break;
