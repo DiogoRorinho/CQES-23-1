@@ -52,7 +52,6 @@ namespace GestorEventosEsqueleto.Inscricoes {
             }
         }
         // Os métodos CriarInscricao, AlterarInscricao e CancelarInscricao são responsáveis por iniciar os fluxos correspondentes às operações de criação, alteração e cancelamento de inscrições.
-        // Eles interagem com a view para obter as informações necessárias e, posteriormente, continuam o fluxo de acordo com a lógica do Controller.
         private void CriarInscricao(){
             List<Evento> eventosDisponiveis = model.ListarEventosDisponiveis();
 
@@ -182,19 +181,8 @@ namespace GestorEventosEsqueleto.Inscricoes {
             // depois pede ID, confirmação, etc.
         }
 
-        }
+        
 
-        // Os métodos IntroduzirDadosInscricao e IntroduzirDadosAlterados são responsáveis por receber os dados necessários para criar ou alterar uma inscrição, respectivamente.
-        public void IntroduzirDadosInscricao(DadosInscricao dados) {
-            if (model.VerificarDisponibilidade(dados.IdEvento, dados.Quantidade)) {
-                DocumentoPdf bilhetePdf = model.CriarInscricao(dados);
-                view.MostrarResultadoOperacaoEBilhete("Inscricao criada com sucesso.", bilhetePdf);
-                view.MostrarMenuInscricoes();
-                return;
-            }
-
-            view.MostrarErroSemVagas();
-        }
 
         // O método SelecionarInscricao é responsável por receber o ID de uma inscrição selecionada pelo usuário, obter os dados correspondentes a essa inscrição e exibi-los na view para que o usuário possa editá-los.
         public void SelecionarInscricao(int idInscricao) {

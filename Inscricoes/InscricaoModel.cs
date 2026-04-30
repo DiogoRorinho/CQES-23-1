@@ -12,8 +12,6 @@ namespace GestorEventosEsqueleto.Inscricoes {
             pastaPdfs = ConfiguracaoAplicacao.ObterPastaPdfs();
         }
         // O método ListarEventosDisponiveis retorna uma lista de eventos que possuem vagas disponíveis para inscrição.
-        // Ele chama o método ObterEventosComDisponibilidade, que é responsável por executar a query SQLite para obter os eventos com vagas.
-        //em contrução, a query SQLite ainda não foi implementada.
         public List<Evento> ListarEventosDisponiveis() {
             return ObterEventosComDisponibilidade();
         }
