@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using GestorEventosEsqueleto.Partilhado;
+using GestorEventos.Partilhado;
 
-namespace GestorEventosEsqueleto.Inscricoes {
+namespace GestorEventos.Inscricoes {
     class InscricaoView {
         // O método MostrarMenuInscricoes apresenta as opções disponíveis para o usuário no módulo de inscrições.
         public void MostrarMenuInscricoes() {

@@ -1,6 +1,6 @@
 using System;
 
-namespace GestorEventosEsqueleto.Aplicacao {
+namespace GestorEventos.Aplicacao {
     class MenuPrincipalView {
         public void ApresentarBoasVindas() {
             Console.WriteLine("Bem-vindo ao gestor de eventos.");

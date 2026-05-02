@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using GestorEventosEsqueleto.Partilhado;
+using GestorEventos.Partilhado;
 
-namespace GestorEventosEsqueleto.Eventos {
+namespace GestorEventos.Eventos {
     class EventoView {
         // O método MostrarMenuEventos apresenta as opções disponíveis para o usuário no módulo de eventos.
         public void MostrarMenuEventos() {

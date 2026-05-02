@@ -1,9 +1,9 @@
 using System;
-using GestorEventosEsqueleto.Eventos;
-using GestorEventosEsqueleto.Inscricoes;
-using GestorEventosEsqueleto.Relatorios;
+using GestorEventos.Eventos;
+using GestorEventos.Inscricoes;
+using GestorEventos.Relatorios;
 
-namespace GestorEventosEsqueleto.Aplicacao {
+namespace GestorEventos.Aplicacao {
     class AplicacaoController {
         private readonly MenuPrincipalView menuPrincipalView;
         private readonly EventoController eventoController;

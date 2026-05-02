@@ -1,6 +1,6 @@
 using System;
 
-namespace GestorEventosEsqueleto.Eventos {
+namespace GestorEventos.Eventos {
     class EventoCanceladoEventArgs : EventArgs {
         public int IdEvento { get; private set; }
         public string NomeEvento { get; private set; }

@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using GestorEventosEsqueleto.Partilhado;
+using GestorEventos.Partilhado;
 
-namespace GestorEventosEsqueleto.Relatorios {
+namespace GestorEventos.Relatorios {
     class RelatorioView {
         public void MostrarMenuRelatorios() {
             Console.WriteLine();

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using GestorEventosEsqueleto.Partilhado;
+using GestorEventos.Partilhado;
 
-namespace GestorEventosEsqueleto.Eventos {
+namespace GestorEventos.Eventos {
     class EventoModel {
         private readonly string connectionString;
 

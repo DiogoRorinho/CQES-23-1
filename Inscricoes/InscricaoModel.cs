@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using GestorEventosEsqueleto.Partilhado;
+using GestorEventos.Partilhado;
 
-namespace GestorEventosEsqueleto.Inscricoes {
+namespace GestorEventos.Inscricoes {
     class InscricaoModel {
         private readonly string connectionString;
         private readonly string pastaPdfs;

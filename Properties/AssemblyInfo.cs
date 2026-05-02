@@ -1,11 +1,11 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("GestorEventosEsqueleto")]
+[assembly: AssemblyTitle("GestorEventos")]
 [assembly: AssemblyDescription("Esqueleto MVC para gestor de eventos")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("GestorEventosEsqueleto")]
+[assembly: AssemblyProduct("GestorEventos")]
 [assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

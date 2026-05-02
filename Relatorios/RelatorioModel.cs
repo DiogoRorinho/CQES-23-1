@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using GestorEventosEsqueleto.Partilhado;
+using GestorEventos.Partilhado;
 
-namespace GestorEventosEsqueleto.Relatorios {
+namespace GestorEventos.Relatorios {
     class RelatorioModel {
         private readonly string connectionString;
         private readonly string pastaPdfs;

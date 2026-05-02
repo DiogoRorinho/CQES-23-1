@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using GestorEventosEsqueleto.Inscricoes;
-using GestorEventosEsqueleto.Partilhado;
+using GestorEventos.Inscricoes;
+using GestorEventos.Partilhado;
 
-namespace GestorEventosEsqueleto.Eventos {
+namespace GestorEventos.Eventos {
     class NotificacaoAnulacaoHandler {
         private readonly InscricaoModel inscricaoModel;
 

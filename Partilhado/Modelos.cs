@@ -2,7 +2,7 @@ using System;
 
 #nullable enable
 
-namespace GestorEventosEsqueleto.Partilhado {
+namespace GestorEventos.Partilhado {
     class Evento {
         public int Id { get; set; }
         public string Nome { get; set; }

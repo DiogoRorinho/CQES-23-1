@@ -1,8 +1,8 @@
-using GestorEventosEsqueleto.Aplicacao;
-using GestorEventosEsqueleto.Partilhado;
+using GestorEventos.Aplicacao;
+using GestorEventos.Partilhado;
 using System;
 
-namespace GestorEventosEsqueleto.Eventos {
+namespace GestorEventos.Eventos {
     class EventoController {
         private readonly AplicacaoController aplicacaoController;
         private readonly EventoView view;

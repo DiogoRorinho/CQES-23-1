@@ -1,9 +1,9 @@
-using GestorEventosEsqueleto.Aplicacao;
-using GestorEventosEsqueleto.Partilhado;
+using GestorEventos.Aplicacao;
+using GestorEventos.Partilhado;
 using System;
 using System.Collections.Generic;
 
-namespace GestorEventosEsqueleto.Inscricoes {
+namespace GestorEventos.Inscricoes {
     class InscricaoController {
         private readonly AplicacaoController aplicacaoController;
         private readonly InscricaoView view;
