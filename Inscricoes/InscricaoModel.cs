@@ -11,6 +11,7 @@ namespace GestorEventosEsqueleto.Inscricoes {
             connectionString = ConfiguracaoAplicacao.ObterConnectionString();
             pastaPdfs = ConfiguracaoAplicacao.ObterPastaPdfs();
         }
+
         // O método ListarEventosDisponiveis retorna uma lista de eventos que possuem vagas disponíveis para inscrição.
         public List<Evento> ListarEventosDisponiveis() {
             return ObterEventosComDisponibilidade();
@@ -50,8 +51,30 @@ namespace GestorEventosEsqueleto.Inscricoes {
         }
 
         // O método CriarInscricao é responsável por criar uma nova inscrição com base nos dados fornecidos.
-        public DocumentoPdf CriarInscricao(DadosInscricao dados) {
-            return ValidarRegistarInscricaoEGerarBilhete(dados);
+        public ResultadoCriacaoInscricao CriarInscricao(DadosInscricao dados) {
+            if (string.IsNullOrWhiteSpace(dados.NomeParticipante) ||
+                string.IsNullOrWhiteSpace(dados.EmailParticipante) ||
+                dados.IdadeParticipante <= 0) {
+                return new ResultadoCriacaoInscricao {
+                    Sucesso = false,
+                    Mensagem = "Dados de inscricao invalidos."
+                };
+            }
+
+            if (!ValidarDisponibilidade(dados.IdEvento, dados.Quantidade)) {
+                return new ResultadoCriacaoInscricao {
+                    Sucesso = false,
+                    Mensagem = "Nao existem vagas suficientes para o numero de inscricoes pretendido."
+                };
+            }
+
+            DocumentoPdf bilhetePdf = ValidarRegistarInscricaoEGerarBilhete(dados);
+
+            return new ResultadoCriacaoInscricao {
+                Sucesso = true,
+                Mensagem = "Inscricao criada com sucesso.",
+                BilhetePdf = bilhetePdf
+            };
         }
 
 

@@ -8,9 +8,9 @@ namespace GestorEventosEsqueleto.Inscricoes {
         public void MostrarMenuInscricoes() {
             Console.WriteLine();
             Console.WriteLine("===== Menu Inscricoes =====");
-            Console.WriteLine("1 - Criar inscricao");
-            Console.WriteLine("2 - Alterar inscricao");
-            Console.WriteLine("3 - Cancelar inscricao");
+            Console.WriteLine("1 - Criar inscricao (Em desenvolvimento)");
+            Console.WriteLine("2 - Alterar inscricao (A desenvolver)");
+            Console.WriteLine("3 - Cancelar inscricao (A desenvolver)");
             Console.WriteLine("0 - Regressar ao menu principal");
             Console.Write("Opcao: ");
         }
@@ -29,11 +29,25 @@ namespace GestorEventosEsqueleto.Inscricoes {
             Console.Write("Indique o ID do evento: ");
         }
 
+        // O método MostrarErroMenu exibe uma mensagem de erro relacionada ao menu, como uma opção inválida ou um erro de entrada.
         public void SolicitarCampoTexto(string pedido)
         {
             Console.Write(pedido);
         }
 
+        // O método MostrarMensagem é um método genérico para exibir qualquer mensagem que o Controller queira comunicar ao usuário.
+        public void MostrarMensagem(string mensagem) {
+            Console.WriteLine(mensagem);
+        }
+
+        // O método MostrarResultadoOperacaoEBilhete exibe uma mensagem de resultado da operação e o nome do arquivo do bilhete gerado em formato PDF.
+        public void MostrarResultadoOperacaoEBilhete(string mensagem, DocumentoPdf bilhetePdf) {
+            Console.WriteLine(mensagem);
+            Console.WriteLine(string.Format("Bilhete gerado: {0}", bilhetePdf.NomeFicheiro));
+        }
+
+
+        // ---------------------------   A IMPLEMENTAR POSTERIORMENTE   ---------------------------
         // O método SolicitarDadosCriacao pode ser expandido para solicitar os dados necessários para criar uma inscrição, como o ID do evento e a quantidade de vagas.
         public void SolicitarDadosCriacao() {
             Console.WriteLine("Formulario de criacao de inscricao.");
@@ -57,13 +71,6 @@ namespace GestorEventosEsqueleto.Inscricoes {
             Console.WriteLine("Confirma o cancelamento da inscricao?");
         }
 
-        // O método MostrarResultadoOperacaoEBilhete exibe uma mensagem de resultado da operação e o nome do arquivo do bilhete gerado em formato PDF.
-        public void MostrarResultadoOperacaoEBilhete(string mensagem, DocumentoPdf bilhetePdf) {
-            Console.WriteLine(mensagem);
-            Console.WriteLine(string.Format("Bilhete gerado: {0}", bilhetePdf.NomeFicheiro));
-        }
-
-
         // O método MostrarResultadoOperacao exibe uma mensagem de resultado da operação realizada, como sucesso ou falha.
         public void MostrarResultadoOperacao(string mensagem) {
             Console.WriteLine(mensagem);
@@ -73,10 +80,6 @@ namespace GestorEventosEsqueleto.Inscricoes {
         public void MostrarErroSemVagas() {
             Console.WriteLine("Nao existem vagas suficientes.");
         }
-
-        // O método MostrarMensagem é um método genérico para exibir qualquer mensagem que o Controller queira comunicar ao usuário.
-        public void MostrarMensagem(string mensagem) {
-            Console.WriteLine(mensagem);
-        }
+        
     }
 }

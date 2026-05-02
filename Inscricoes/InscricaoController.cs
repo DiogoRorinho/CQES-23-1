@@ -25,6 +25,7 @@ namespace GestorEventosEsqueleto.Inscricoes {
                 regressar = SelecionarOpcao(opcao);
             }
         }
+
         // O método SelecionarOpcao é responsável por interpretar a opção selecionada pelo usuário no menu de inscrições e chamar o método correspondente para cada operação (criação, alteração, cancelamento ou regressar ao menu principal).
         public bool SelecionarOpcao(string opcao)
         {
@@ -35,11 +36,13 @@ namespace GestorEventosEsqueleto.Inscricoes {
                     return false;
 
                 case "2":
-                    AlterarInscricao();
+                    view.MostrarMensagem("Opcao a desenvolver.");   // retirar quando for implementada
+                    //AlterarInscricao();                           // descomentar quando for implementada
                     return false;
 
                 case "3":
-                    CancelarInscricao();
+                    view.MostrarMensagem("Opcao a desenvolver.");   // retirar quando for implementada
+                    //CancelarInscricao();                          // descomentar quando for implementada
                     return false;
 
                 case "0":
@@ -47,10 +50,11 @@ namespace GestorEventosEsqueleto.Inscricoes {
                     return true;
 
                 default:
-                    view.MostrarMensagem("Opcao de inscricoes invalida.");
+                    view.MostrarMensagem("Opcao de inscricoes invalida. Escolha 1, 2, 3 ou 0 para regressar ao menu principal.");
                     return false;
             }
         }
+
         // Os métodos CriarInscricao, AlterarInscricao e CancelarInscricao são responsáveis por iniciar os fluxos correspondentes às operações de criação, alteração e cancelamento de inscrições.
         private void CriarInscricao(){
             List<Evento> eventosDisponiveis = model.ListarEventosDisponiveis();
@@ -98,6 +102,7 @@ namespace GestorEventosEsqueleto.Inscricoes {
                 view.MostrarMensagem("Erro ao criar inscricao: " + ex.Message);
             }
         }
+
         // O método LerIdEventoValido é responsável por solicitar ao usuário o ID de um evento e validar se o ID corresponde a um evento disponível na lista fornecida. Ele continua solicitando até que um ID válido seja inserido.
         private int LerIdEventoValido(List<Evento> eventosDisponiveis)
         {
@@ -167,6 +172,13 @@ namespace GestorEventosEsqueleto.Inscricoes {
             }
         }
 
+        // O método RegressarMenuPrincipal é responsável por chamar o método correspondente no AplicacaoController para retornar ao menu principal do programa.
+        public void RegressarMenuPrincipal() {
+            aplicacaoController.RegressarMenuPrincipal();
+        }
+
+        
+        // ---------------------------   A IMPLEMENTAR POSTERIORMENTE   ---------------------------
         private void AlterarInscricao()
         {
             view.MostrarListaInscricoes(model.ListarInscricoes());
@@ -180,9 +192,6 @@ namespace GestorEventosEsqueleto.Inscricoes {
             view.MostrarListaInscricoes(model.ListarInscricoes());
             // depois pede ID, confirmação, etc.
         }
-
-        
-
 
         // O método SelecionarInscricao é responsável por receber o ID de uma inscrição selecionada pelo usuário, obter os dados correspondentes a essa inscrição e exibi-los na view para que o usuário possa editá-los.
         public void SelecionarInscricao(int idInscricao) {
@@ -213,9 +222,6 @@ namespace GestorEventosEsqueleto.Inscricoes {
             view.MostrarResultadoOperacao("Inscricao cancelada com sucesso.");
             view.MostrarMenuInscricoes();
         }
-        // O método RegressarMenuPrincipal é responsável por chamar o método correspondente no AplicacaoController para retornar ao menu principal do programa.
-        public void RegressarMenuPrincipal() {
-            aplicacaoController.RegressarMenuPrincipal();
-        }
+
     }
 }
