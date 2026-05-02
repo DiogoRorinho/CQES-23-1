@@ -53,7 +53,7 @@ namespace GestorEventos.Eventos {
                     return true;
 
                 default:
-                    view.MostrarMensagem("Opcao de inscricoes invalida. Escolha 1, 2, 3 ou 0 para regressar ao menu principal.");
+                    view.MostrarMensagem("Opcao de eventos invalida. Escolha 1, 2, 3 ou 0 para regressar ao menu principal.");
                     return false;
             }
         }

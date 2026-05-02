@@ -19,7 +19,7 @@ namespace GestorEventos.Relatorios {
         }
 
         public List<Evento> ObterListaEventos() {
-            // Aqui ficara a query SQLite para listar eventos.
+            // Aqui ficara a query SQLite para listar eventos - Simulacao de dados temporaria.
             return new List<Evento> {
                 new Evento {
                     Id = 1,
@@ -115,6 +115,7 @@ namespace GestorEventos.Relatorios {
             return inscricoesEvento;
         }
 
+        // Simulacao de dados temporaria para inscricoes.
         private List<Inscricao> ObterListaInscricoes() {
             return new List<Inscricao> {
                 new Inscricao { Id = 1, IdEvento = 1, Estado = "ativa", EmailParticipante = "ana@exemplo.pt" },
