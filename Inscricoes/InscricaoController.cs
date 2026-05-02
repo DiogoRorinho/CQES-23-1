@@ -1,5 +1,7 @@
 using GestorEventosEsqueleto.Aplicacao;
 using GestorEventosEsqueleto.Partilhado;
+using System;
+using System.Collections.Generic;
 
 namespace GestorEventosEsqueleto.Inscricoes {
     class InscricaoController {

@@ -1,5 +1,7 @@
 using System;
 
+#nullable enable
+
 namespace GestorEventosEsqueleto.Partilhado {
     class Evento {
         public int Id { get; set; }

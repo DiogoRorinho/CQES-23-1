@@ -17,7 +17,7 @@ namespace GestorEventosEsqueleto.Aplicacao {
         }
 
         public void MostrarOpcaoInvalida() {
-            Console.WriteLine("Opcao invalida.");
+            Console.WriteLine("Opcao invalida. Escolha 1, 2, 3 ou 0 para Terminar.");
         }
 
         public void MostrarErroMenu(string mensagem) {

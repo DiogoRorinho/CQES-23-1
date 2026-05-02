@@ -1,5 +1,6 @@
 using GestorEventosEsqueleto.Aplicacao;
 using GestorEventosEsqueleto.Partilhado;
+using System;
 
 namespace GestorEventosEsqueleto.Eventos {
     class EventoController {
@@ -13,30 +14,57 @@ namespace GestorEventosEsqueleto.Eventos {
             this.model = model;
         }
 
-        public void MostrarMenuModulo() {
-            view.MostrarMenuEventos();
-        }
+        // O método MostrarMenuModulo é responsável por exibir o menu de eventos e processar as opções selecionadas pelo usuário. Ele utiliza um loop para permitir que o usuário continue interagindo com o menu até que decida regressar ao menu principal.
+        public void MostrarMenuModulo()
+        {
+            bool regressar = false;
 
-        public void SelecionarOpcao(string opcao) {
-            switch (opcao) {
-                case "Criar evento":
-                    view.SolicitarDadosCriacao();
-                    break;
-                case "Alterar evento":
-                    view.MostrarListaEventos(model.ListarEventos());
-                    break;
-                case "Cancelar evento":
-                    view.MostrarListaEventos(model.ListarEventos());
-                    break;
-                case "Regressar ao menu principal":
-                    RegressarMenuPrincipal();
-                    break;
-                default:
-                    view.MostrarMensagem("Opcao de eventos invalida.");
-                    break;
+            while (!regressar)
+            {
+                view.MostrarMenuEventos();
+                string opcao = Console.ReadLine() ?? string.Empty;
+                regressar = SelecionarOpcao(opcao);
             }
         }
 
+
+        // O método SelecionarOpcao é responsável por interpretar a opção selecionada pelo usuário no menu de eventos e chamar o método correspondente para cada operação (criação, alteração, cancelamento ou regressar ao menu principal).
+        public bool SelecionarOpcao(string opcao)
+        {
+            switch (opcao.Trim())
+            {
+                case "1":
+                    view.MostrarMensagem("Opcao a desenvolver.");   // retirar quando for implementada
+                    //CriarEvento();                                // descomentar quando for implementada    
+                    return false;
+
+                case "2":
+                    view.MostrarMensagem("Opcao a desenvolver.");   // retirar quando for implementada
+                    //AlterarEvento();                              // descomentar quando for implementada
+                    return false;
+
+                case "3":
+                    view.MostrarMensagem("Opcao a desenvolver.");   // retirar quando for implementada
+                    //CancelarEvento();                             // descomentar quando for implementada
+                    return false;
+
+                case "0":
+                    RegressarMenuPrincipal();
+                    return true;
+
+                default:
+                    view.MostrarMensagem("Opcao de inscricoes invalida. Escolha 1, 2, 3 ou 0 para regressar ao menu principal.");
+                    return false;
+            }
+        }
+
+        public void RegressarMenuPrincipal() {
+            aplicacaoController.RegressarMenuPrincipal();
+        }
+
+
+
+        // ----------------------------   A IMPLEMENTAR POSTERIORMENTE   ---------------------------
         public void IntroduzirDadosEvento(DadosEvento dados) {
             model.CriarEvento(dados);
             view.MostrarResultadoOperacao("Evento criado com sucesso.");
@@ -64,8 +92,5 @@ namespace GestorEventosEsqueleto.Eventos {
             view.MostrarMenuEventos();
         }
 
-        public void RegressarMenuPrincipal() {
-            aplicacaoController.RegressarMenuPrincipal();
-        }
     }
 }

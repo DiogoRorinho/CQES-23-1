@@ -51,20 +51,16 @@ namespace GestorEventosEsqueleto.Aplicacao {
 
         public void SelecionarOpcao(string opcao) {
             switch (NormalizarOpcao(opcao)) {
-                case "1":
-                // case "Eventos": - dispensável para o utilizador, pois a descrição do menu já é clara o suficiente
+                case "1":                // case "Eventos"
                     eventoController.MostrarMenuModulo();
                     break;
-                case "2":
-                // case "Inscricoes": - dispensável para o utilizador, pois a descrição do menu já é clara o suficiente
+                case "2":                // case "Inscricoes"
                     inscricaoController.MostrarMenuModulo();
                     break;
-                case "3":
-                // case "Relatorios": - dispensável para o utilizador, pois a descrição do menu já é clara o suficiente
+                case "3":                // case "Relatorios"
                     relatorioController.MostrarMenuModulo();
                     break;
-                case "0":
-                // case "Terminar": - dispensável para o utilizador, pois a descrição do menu já é clara o suficiente
+                case "0":                // case "Terminar"
                     TerminarPrograma();
                     break;
                 default:

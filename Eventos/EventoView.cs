@@ -4,9 +4,17 @@ using GestorEventosEsqueleto.Partilhado;
 
 namespace GestorEventosEsqueleto.Eventos {
     class EventoView {
+        // O método MostrarMenuEventos apresenta as opções disponíveis para o usuário no módulo de eventos.
         public void MostrarMenuEventos() {
-            Console.WriteLine("Menu eventos: Criar evento | Alterar evento | Cancelar evento | Regressar ao menu principal");
+            Console.WriteLine();
+            Console.WriteLine("===== Menu Eventos =====");
+            Console.WriteLine("1 - Criar evento (A desenvolver)");
+            Console.WriteLine("2 - Alterar evento (A desenvolver)");
+            Console.WriteLine("3 - Cancelar evento (A desenvolver)");
+            Console.WriteLine("0 - Regressar ao menu principal");
+            Console.Write("Opcao: ");
         }
+
 
         public void SolicitarDadosCriacao() {
             Console.WriteLine("Formulario de criacao de evento.");
