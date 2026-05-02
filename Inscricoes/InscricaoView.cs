@@ -35,6 +35,11 @@ namespace GestorEventosEsqueleto.Inscricoes {
             Console.Write(pedido);
         }
 
+        // O método SolicitarDadosCriacao é um cabeçalho para indicar o início do processo de criação de uma inscrição, onde o usuário será solicitado a fornecer os dados necessários para criar a inscrição.
+        public void SolicitarDadosCriacao() {
+            Console.WriteLine("Criacao de inscricao.");
+        }
+
         // O método MostrarMensagem é um método genérico para exibir qualquer mensagem que o Controller queira comunicar ao usuário.
         public void MostrarMensagem(string mensagem) {
             Console.WriteLine(mensagem);
@@ -48,10 +53,7 @@ namespace GestorEventosEsqueleto.Inscricoes {
 
 
         // ---------------------------   A IMPLEMENTAR POSTERIORMENTE   ---------------------------
-        // O método SolicitarDadosCriacao pode ser expandido para solicitar os dados necessários para criar uma inscrição, como o ID do evento e a quantidade de vagas.
-        public void SolicitarDadosCriacao() {
-            Console.WriteLine("Formulario de criacao de inscricao.");
-        }
+
 
         // O método MostrarListaInscricoes exibe a lista de inscrições existentes, incluindo o ID da inscrição, o ID do evento associado e o estado da inscrição.
         public void MostrarListaInscricoes(List<Inscricao> listaInscricoes) {

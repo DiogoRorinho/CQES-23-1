@@ -67,6 +67,7 @@ namespace GestorEventosEsqueleto.Inscricoes {
 
             view.MostrarListaEventos(eventosDisponiveis);
 
+            view.SolicitarDadosCriacao();
             int idEvento = LerIdEventoValido(eventosDisponiveis);
             string nome = LerTextoNaoVazio("Nome do inscrito: ");
             string email = LerTextoNaoVazio("Email do inscrito: ");
@@ -86,10 +87,10 @@ namespace GestorEventosEsqueleto.Inscricoes {
             {
                 ResultadoCriacaoInscricao resultado = model.CriarInscricao(dados);
 
-                if (resultado.Sucesso)
+                if (resultado.Sucesso && resultado.BilhetePdf != null)
                 {
                     view.MostrarResultadoOperacaoEBilhete(
-                        "Inscricao criada com sucesso.",
+                        resultado.Mensagem,
                         resultado.BilhetePdf);
                 }
                 else

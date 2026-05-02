@@ -45,6 +45,7 @@ namespace GestorEventosEsqueleto.Inscricoes {
         }
 
         // O método ValidarDisponibilidade contém a lógica de validação para verificar se a quantidade de vagas solicitada está disponível para o evento especificado.
+        // ----- provisório até SQLite estar implementado -----
         public bool ValidarDisponibilidade(int idEvento, int quantidade) {
             // Aqui ficará a validação apoiada em queries SQLite.
             return true;
