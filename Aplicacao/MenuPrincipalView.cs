@@ -1,21 +1,39 @@
 using System;
 
-namespace GestorEventosEsqueleto.Aplicacao {
+namespace GestorEventos.Aplicacao {
     class MenuPrincipalView {
         public void ApresentarBoasVindas() {
             Console.WriteLine("Bem-vindo ao gestor de eventos.");
         }
 
         public void MostrarMenuPrincipal() {
-            Console.WriteLine("Menu principal: Eventos | Inscricoes | Relatorios | Terminar");
+            Console.WriteLine();
+            Console.WriteLine("=== Menu principal ===");
+            Console.WriteLine("1 - Eventos");
+            Console.WriteLine("2 - Inscricoes");
+            Console.WriteLine("3 - Relatorios");
+            Console.WriteLine("0 - Terminar");
+            Console.Write("Escolha uma opcao: ");
         }
 
         public void MostrarOpcaoInvalida() {
-            Console.WriteLine("Opcao invalida.");
+            Console.WriteLine("Opcao invalida. Escolha 1, 2, 3 ou 0 para Terminar.");
+        }
+
+        public void MostrarErroMenu(string mensagem) {
+            Console.WriteLine(string.Format("Erro no menu principal: {0}", mensagem));
         }
 
         public void ApresentarMensagemEncerramento() {
             Console.WriteLine("Aplicacao terminada.");
+        }
+
+        public void MostrarMensagemRegresso() {
+            Console.WriteLine("A regressar ao menu principal.");
+        }
+
+        public void FinalizarOperacaoMenu() {
+            Console.WriteLine();
         }
     }
 }

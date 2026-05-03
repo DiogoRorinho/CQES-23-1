@@ -1,7 +1,16 @@
-using System.Collections.Generic;
-using GestorEventosEsqueleto.Partilhado;
+// NOTA DE VERIFICACAO:
+// Nesta versao, os metodos de criacao, alteracao e cancelamento de eventos
+// nao devolvem ainda um resultado estruturado de sucesso/falha ao Controller.
+// Numa iteracao posterior, e em alinhamento com o que ja foi adotado no modulo
+// de Inscricoes, podera fazer sentido adaptar estes metodos para devolverem
+// um objeto de resultado com confirmacao da operacao e mensagem associada,
+// sobretudo quando a validacao completa e a integracao com SQLite estiverem consolidadas.
 
-namespace GestorEventosEsqueleto.Eventos {
+using System;
+using System.Collections.Generic;
+using GestorEventos.Partilhado;
+
+namespace GestorEventos.Eventos {
     class EventoModel {
         private readonly string connectionString;
 
@@ -12,11 +21,18 @@ namespace GestorEventosEsqueleto.Eventos {
             connectionString = ConfiguracaoAplicacao.ObterConnectionString();
         }
 
+        // FUTURA MELHORIA:
+        // devolver resultado estruturado (sucesso/mensagem) ao Controller,
+        // em vez de este assumir sucesso apos chamada ao Model.
         public void CriarEvento(DadosEvento dados) {
             ValidarERegistarEvento(dados);
         }
 
         public void ValidarERegistarEvento(DadosEvento dados) {
+            if (dados == null) {
+                return;
+            }
+
             // Aqui ficarão a validação e o INSERT SQLite do evento.
         }
 
@@ -31,7 +47,7 @@ namespace GestorEventosEsqueleto.Eventos {
                     Id = 1,
                     Nome = "Workshop de Arquitetura",
                     Local = "Lisboa",
-                    Data = new System.DateTime(2026, 5, 15),
+                    Data = new DateTime(2026, 5, 15),
                     Estado = "ativo",
                     Capacidade = 30
                 },
@@ -39,7 +55,7 @@ namespace GestorEventosEsqueleto.Eventos {
                     Id = 2,
                     Nome = "Seminario MVC",
                     Local = "Porto",
-                    Data = new System.DateTime(2026, 6, 10),
+                    Data = new DateTime(2026, 6, 10),
                     Estado = "ativo",
                     Capacidade = 50
                 }
@@ -51,27 +67,45 @@ namespace GestorEventosEsqueleto.Eventos {
         }
 
         public Evento ObterDadosEvento(int idEvento) {
-            // Aqui ficará a query SQLite para obter um evento específico.
-            return new Evento {
-                Id = idEvento,
-                Nome = "Evento " + idEvento,
-                Local = "Local por definir",
-                Data = new System.DateTime(2026, 7, 1),
-                Estado = "ativo",
-                Capacidade = 100
-            };
+            if (idEvento <= 0) {
+                return null;
+            }
+
+            foreach (Evento evento in ObterListaEventos()) {
+                if (evento.Id == idEvento) {
+                    return evento;
+                }
+            }
+
+            return null;
         }
 
+        // FUTURA MELHORIA:
+        // devolver resultado estruturado (sucesso/mensagem) ao Controller,
+        // em vez de este assumir sucesso apos chamada ao Model.
+        // Verificar se existem inscricoes que ultrapassem a nova capacidade, e impedir a alteracao se for o caso, por exemplo.
         public void AlterarEvento(int idEvento, DadosEvento dados) {
             ValidarEAtualizarEvento(idEvento, dados);
         }
 
         public void ValidarEAtualizarEvento(int idEvento, DadosEvento dados) {
+            if (idEvento <= 0 || dados == null) {
+                return;
+            }
+
             // Aqui ficarão a validação e o UPDATE SQLite do evento.
         }
 
+        // FUTURA MELHORIA:
+        // devolver resultado estruturado (sucesso/mensagem) ao Controller,
+        // em vez de este assumir sucesso apos chamada ao Model. 
+        // ex. validação idEvento, atualizacao estado, evento já cancelado, ausência de subscritores, etc
         public void CancelarEvento(int idEvento) {
             Evento eventoCancelado = ObterEvento(idEvento);
+
+            if (eventoCancelado == null) {
+                return;
+            }
 
             AtualizarEstadoEvento(idEvento, "cancelado");
             eventoCancelado.Estado = "cancelado";
@@ -80,6 +114,10 @@ namespace GestorEventosEsqueleto.Eventos {
         }
 
         public void AtualizarEstadoEvento(int idEvento, string estado) {
+            if (idEvento <= 0 || string.IsNullOrWhiteSpace(estado)) {
+                return;
+            }
+
             // Aqui ficará o UPDATE SQLite do estado do evento.
         }
 
@@ -91,7 +129,7 @@ namespace GestorEventosEsqueleto.Eventos {
             EventoCanceladoEventArgs dadosCancelamento = new EventoCanceladoEventArgs(
                 eventoCancelado.Id,
                 eventoCancelado.Nome,
-                System.DateTime.Now,
+                DateTime.Now,
                 eventoCancelado.Estado);
 
             EventoCancelado(this, dadosCancelamento);

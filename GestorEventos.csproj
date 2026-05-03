@@ -6,13 +6,14 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{8C4DDA8D-9C1B-4D4A-8656-F6B1B3A9D001}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>GestorEventosEsqueleto</RootNamespace>
-    <AssemblyName>GestorEventosEsqueleto</AssemblyName>
+    <RootNamespace>GestorEventos</RootNamespace>
+    <AssemblyName>GestorEventos</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>

@@ -2,7 +2,7 @@ using System;
 using System.Configuration;
 using System.IO;
 
-namespace GestorEventosEsqueleto.Partilhado {
+namespace GestorEventos.Partilhado {
     static class ConfiguracaoAplicacao {
         private const string NomeConnectionString = "GestorEventosDb";
         private const string ChavePastaPdfs = "PastaPdfs";

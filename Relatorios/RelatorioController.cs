@@ -1,12 +1,13 @@
-using System.Collections.Generic;
-using GestorEventosEsqueleto.Aplicacao;
-using GestorEventosEsqueleto.Partilhado;
+using System;
+using GestorEventos.Aplicacao;
+using GestorEventos.Partilhado;
 
-namespace GestorEventosEsqueleto.Relatorios {
+namespace GestorEventos.Relatorios {
     class RelatorioController {
         private readonly AplicacaoController aplicacaoController;
         private readonly RelatorioView view;
         private readonly RelatorioModel model;
+        private bool regressarMenuPrincipal;
 
         public RelatorioController(AplicacaoController aplicacaoController, RelatorioView view, RelatorioModel model) {
             this.aplicacaoController = aplicacaoController;
@@ -15,19 +16,33 @@ namespace GestorEventosEsqueleto.Relatorios {
         }
 
         public void MostrarMenuModulo() {
-            view.MostrarMenuRelatorios();
+            regressarMenuPrincipal = false;
+
+            while (!regressarMenuPrincipal) {
+                try {
+                    view.MostrarMenuRelatorios();
+                    SelecionarOpcao(Console.ReadLine());
+                }
+                catch (Exception ex) {
+                    view.MostrarErroMenu(ex.Message);
+                }
+                finally {
+                    view.FinalizarOperacaoMenu();
+                }
+            }
         }
 
         public void SelecionarOpcao(string opcao) {
-            switch (opcao) {
-                case "Listagem de inscritos por evento":
-                    view.MostrarListaEventos(model.ListarEventos());
+            switch (NormalizarOpcao(opcao)) {
+                case "1":                //case "Listagem de inscritos por evento"
+                    ApresentarRelatorioInscritosPorEvento();
                     break;
-                case "Eventos com ocupacao":
+                case "2":                //case "Eventos com ocupacao"
                     ApresentarRelatorioEventosComOcupacao();
                     break;
-                case "Regressar ao menu principal":
+                case "0":                //case "Regressar ao menu principal"
                     RegressarMenuPrincipal();
+                    regressarMenuPrincipal = true;
                     break;
                 default:
                     view.MostrarMensagem("Opcao de relatorios invalida.");
@@ -35,22 +50,47 @@ namespace GestorEventosEsqueleto.Relatorios {
             }
         }
 
+        public void ApresentarRelatorioInscritosPorEvento() {
+            view.MostrarListaEventos(model.ListarEventos());
+
+            view.SolicitarIdEvento();
+
+            int idEvento;
+            if (!int.TryParse(Console.ReadLine(), out idEvento)) {
+                view.MostrarMensagem("ID de evento invalido.");
+                return;
+            }
+
+            if (idEvento <= 0) {
+                view.MostrarMensagem("ID de evento invalido.");
+                return;
+            }
+
+            SelecionarEvento(idEvento);
+        }
+
         public void SelecionarEvento(int idEvento) {
             DadosRelatorio dadosRelatorio = model.ListarInscritosPorEvento(idEvento);
             DocumentoPdf relatorioPdf = model.ObterUltimoRelatorioGerado();
             view.ApresentarRelatorioEPdf(dadosRelatorio, relatorioPdf);
-            view.MostrarMenuRelatorios();
         }
 
         public void ApresentarRelatorioEventosComOcupacao() {
             DadosRelatorio dadosRelatorio = model.ListarEventosComOcupacao();
             DocumentoPdf relatorioPdf = model.ObterUltimoRelatorioGerado();
             view.ApresentarRelatorioEPdf(dadosRelatorio, relatorioPdf);
-            view.MostrarMenuRelatorios();
         }
 
         public void RegressarMenuPrincipal() {
             aplicacaoController.RegressarMenuPrincipal();
+        }
+
+        private string NormalizarOpcao(string opcao) {
+            if (string.IsNullOrWhiteSpace(opcao)) {
+                return string.Empty;
+            }
+
+            return opcao.Trim();
         }
     }
 }
