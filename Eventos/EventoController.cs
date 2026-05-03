@@ -71,7 +71,7 @@ namespace GestorEventos.Eventos {
                     break;
 
                 default:
-                    view.MostrarMensagem("Opcao de eventos invalida. Escolha 1, 2, 3 ou 0 para regressar ao menu principal.");
+                    view.MostrarMensagem("Opcao de eventos invalida. Escolha 1, 2, 3, 4 ou 0 para regressar ao menu principal.");
                     break;
             }
         }
