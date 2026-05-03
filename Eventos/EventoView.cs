@@ -10,6 +10,7 @@ namespace GestorEventos.Eventos {
             Console.WriteLine("1 - Criar evento");
             Console.WriteLine("2 - Alterar evento");
             Console.WriteLine("3 - Cancelar evento");
+            Console.WriteLine("4 - Listar eventos");
             Console.WriteLine("0 - Regressar ao menu principal");
             Console.Write("Escolha uma opcao: ");
         }

@@ -46,6 +46,10 @@ namespace GestorEventos.Eventos {
                     CancelarEvento();
                     break;
 
+                case "4":
+                    ListarEventos();
+                    break;
+
                 case "0":
                     RegressarMenuPrincipal();
                     regressarMenuPrincipal = true;
@@ -129,6 +133,10 @@ namespace GestorEventos.Eventos {
 
             model.CancelarEvento(idEvento);
             view.MostrarResultadoOperacao("Evento cancelado com sucesso.");
+        }
+
+        private void ListarEventos() {
+            view.MostrarListaEventos(model.ListarEventos());
         }
 
         private DadosEvento RecolherDadosEvento() {
