@@ -7,15 +7,15 @@ namespace GestorEventos.Eventos {
         public void MostrarMenuEventos() {
             Console.WriteLine();
             Console.WriteLine("=== Menu eventos ===");
-            Console.WriteLine("1 - Criar evento");
-            Console.WriteLine("2 - Alterar evento");
-            Console.WriteLine("3 - Cancelar evento");
-            Console.WriteLine("4 - Listar eventos");
+            Console.WriteLine("1 - Criar evento (Em desenvolvimento)");
+            Console.WriteLine("2 - Alterar evento (Em desenvolvimento)");
+            Console.WriteLine("3 - Cancelar evento (Em desenvolvimento)");
+            Console.WriteLine("4 - Listar eventos (Em desenvolvimento)");
             Console.WriteLine("0 - Regressar ao menu principal");
             Console.Write("Escolha uma opcao: ");
         }
 
-        public string LerEntrada() {
+        public string LerEntrada() {                        // Este método deve passar ao Controller (input)
             return Console.ReadLine() ?? string.Empty;
         }
 
