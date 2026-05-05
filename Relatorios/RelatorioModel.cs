@@ -7,7 +7,7 @@ namespace GestorEventos.Relatorios {
     class RelatorioModel {
         private readonly string connectionString;
         private readonly string pastaPdfs;
-        private DocumentoPdf ultimoRelatorioGerado;
+        private DocumentoPdf? ultimoRelatorioGerado;
 
         public RelatorioModel() {
             connectionString = ConfiguracaoAplicacao.ObterConnectionString();
@@ -46,7 +46,7 @@ namespace GestorEventos.Relatorios {
 
         public DadosRelatorio ObterDadosRelatorioEGerarPdf(int idEvento) {
             // Aqui ficarao a query SQLite e a geracao do PDF em PDFsharp.
-            Evento evento = ObterEventoPorId(idEvento);
+            Evento? evento = ObterEventoPorId(idEvento);
             List<Inscricao> inscricoes = ObterInscricoesPorEvento(idEvento);
 
             ultimoRelatorioGerado = CriarDocumentoPdf(
@@ -93,7 +93,7 @@ namespace GestorEventos.Relatorios {
             };
         }
 
-        private Evento ObterEventoPorId(int idEvento) {
+        private Evento? ObterEventoPorId(int idEvento) {
             foreach (Evento evento in ObterListaEventos()) {
                 if (evento.Id == idEvento) {
                     return evento;
@@ -125,7 +125,7 @@ namespace GestorEventos.Relatorios {
             };
         }
 
-        private string ConstruirConteudoInscritos(Evento evento, List<Inscricao> inscricoes) {
+        private string ConstruirConteudoInscritos(Evento? evento, List<Inscricao> inscricoes) {
             if (evento == null) {
                 return "Evento nao encontrado.";
             }

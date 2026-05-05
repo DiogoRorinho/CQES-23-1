@@ -49,7 +49,7 @@ namespace GestorEventos.Aplicacao {
             }
         }
 
-        public void SelecionarOpcao(string opcao) {
+        public void SelecionarOpcao(string? opcao) {
             switch (NormalizarOpcao(opcao)) {
                 case "1":                // case "Eventos"
                     eventoController.MostrarMenuModulo();
@@ -78,7 +78,7 @@ namespace GestorEventos.Aplicacao {
             menuPrincipalView.ApresentarMensagemEncerramento();
         }
 
-        private string NormalizarOpcao(string opcao) {
+        private string NormalizarOpcao(string? opcao) {
             if (string.IsNullOrWhiteSpace(opcao)) {
                 return string.Empty;
             }

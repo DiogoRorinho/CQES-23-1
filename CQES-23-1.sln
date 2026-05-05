@@ -4,7 +4,7 @@ VisualStudioVersion = 18.5.11723.231 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GestorEventos CQES23+1", "GestorEventos CQES23+1", "{8D9CF31D-F17A-8B34-0AD8-0F09327C4A76}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GestorEventos", "GestorEventos.csproj", "{8C4DDA8D-9C1B-4D4A-8656-F6B1B3A9D001}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4D}") = "GestorEventos", "GestorEventos.csproj", "{8C4DDA8D-9C1B-4D4A-8656-F6B1B3A9D001}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -47,7 +47,7 @@ namespace GestorEventos.Eventos {
             }
         }
 
-        public void SelecionarOpcao(string opcao) {
+        public void SelecionarOpcao(string? opcao) {
             switch (NormalizarOpcao(opcao)) {
                 case "1":
                     CriarEvento();
@@ -83,7 +83,7 @@ namespace GestorEventos.Eventos {
         private void CriarEvento() {
             view.SolicitarDadosCriacao();
 
-            DadosEvento dados = RecolherDadosEvento();
+            DadosEvento? dados = RecolherDadosEvento();
             if (dados == null) {
                 view.MostrarMensagem("Dados do evento invalidos.");
                 return;
@@ -106,7 +106,7 @@ namespace GestorEventos.Eventos {
                 return;
             }
 
-            Evento evento = model.ObterEvento(idEvento);
+            Evento? evento = model.ObterEvento(idEvento);
             if (evento == null) {
                 view.MostrarMensagem("Evento nao encontrado.");
                 return;
@@ -114,7 +114,7 @@ namespace GestorEventos.Eventos {
 
             view.MostrarDadosParaEdicao(evento);
 
-            DadosEvento dados = RecolherDadosEvento();
+            DadosEvento? dados = RecolherDadosEvento();
             if (dados == null) {
                 view.MostrarMensagem("Dados do evento invalidos.");
                 return;
@@ -134,7 +134,7 @@ namespace GestorEventos.Eventos {
                 return;
             }
 
-            Evento evento = model.ObterEvento(idEvento);
+            Evento? evento = model.ObterEvento(idEvento);
             if (evento == null) {
                 view.MostrarMensagem("Evento nao encontrado.");
                 return;
@@ -157,7 +157,7 @@ namespace GestorEventos.Eventos {
             view.MostrarListaEventos(model.ListarEventos());
         }
 
-        private DadosEvento RecolherDadosEvento() {
+        private DadosEvento? RecolherDadosEvento() {
             view.SolicitarNome();
             string nome = view.LerEntrada();            // Acrescentar validacao de nome como texto nao vazio. e a leitura do input deve ser feita pelo Controller
 
@@ -184,7 +184,7 @@ namespace GestorEventos.Eventos {
             };
         }
 
-        private string NormalizarOpcao(string opcao) {
+        private string NormalizarOpcao(string? opcao) {
             if (string.IsNullOrWhiteSpace(opcao)) {
                 return string.Empty;
             }

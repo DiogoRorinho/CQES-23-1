@@ -15,7 +15,7 @@ namespace GestorEventos.Eventos {
         private readonly string connectionString;
 
         public delegate void EventoCanceladoHandler(object sender, EventoCanceladoEventArgs e);
-        public event EventoCanceladoHandler EventoCancelado;
+        public event EventoCanceladoHandler? EventoCancelado;
 
         public EventoModel() {
             connectionString = ConfiguracaoAplicacao.ObterConnectionString();
@@ -62,11 +62,11 @@ namespace GestorEventos.Eventos {
             };
         }
 
-        public Evento ObterEvento(int idEvento) {
+        public Evento? ObterEvento(int idEvento) {
             return ObterDadosEvento(idEvento);
         }
 
-        public Evento ObterDadosEvento(int idEvento) {
+        public Evento? ObterDadosEvento(int idEvento) {
             if (idEvento <= 0) {
                 return null;
             }
@@ -101,7 +101,7 @@ namespace GestorEventos.Eventos {
         // em vez de este assumir sucesso apos chamada ao Model. 
         // ex. validação idEvento, atualizacao estado, evento já cancelado, ausência de subscritores, etc
         public void CancelarEvento(int idEvento) {
-            Evento eventoCancelado = ObterEvento(idEvento);
+            Evento? eventoCancelado = ObterEvento(idEvento);
 
             if (eventoCancelado == null) {
                 return;
@@ -122,17 +122,13 @@ namespace GestorEventos.Eventos {
         }
 
         private void DispararEventoCancelado(Evento eventoCancelado) {
-            if (EventoCancelado == null) {
-                return;
-            }
-
             EventoCanceladoEventArgs dadosCancelamento = new EventoCanceladoEventArgs(
                 eventoCancelado.Id,
                 eventoCancelado.Nome,
                 DateTime.Now,
                 eventoCancelado.Estado);
 
-            EventoCancelado(this, dadosCancelamento);
+            EventoCancelado?.Invoke(this, dadosCancelamento);
         }
 
         public string ObterConnectionString() {
