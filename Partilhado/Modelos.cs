@@ -1,20 +1,18 @@
 using System;
 
-#nullable enable
-
 namespace GestorEventos.Partilhado {
     class Evento {
         public int Id { get; set; }
-        public string Nome { get; set; }
-        public string Local { get; set; }
+        public string Nome { get; set; } = string.Empty;
+        public string Local { get; set; } = string.Empty;
         public DateTime Data { get; set; }
-        public string Estado { get; set; }
+        public string Estado { get; set; } = string.Empty;
         public int Capacidade { get; set; }
     }
 
     class DadosEvento {
-        public string Nome { get; set; }
-        public string Local { get; set; }
+        public string Nome { get; set; } = string.Empty;
+        public string Local { get; set; } = string.Empty;
         public DateTime Data { get; set; }
         public int Capacidade { get; set; }
     }
@@ -22,14 +20,14 @@ namespace GestorEventos.Partilhado {
     class Inscricao {
         public int Id { get; set; }
         public int IdEvento { get; set; }
-        public string Estado { get; set; }
-        public string EmailParticipante { get; set; }
+        public string Estado { get; set; } = string.Empty;
+        public string EmailParticipante { get; set; } = string.Empty;
     }
 
     class DadosInscricao {
         public int IdEvento { get; set; }
-        public string NomeParticipante { get; set; }
-        public string EmailParticipante { get; set; }
+        public string NomeParticipante { get; set; } = string.Empty;
+        public string EmailParticipante { get; set; } = string.Empty;
         public int IdadeParticipante { get; set; }
         public int Quantidade { get; set; }
     }
@@ -41,13 +39,13 @@ namespace GestorEventos.Partilhado {
     }
 
     class DadosRelatorio {
-        public string Titulo { get; set; }
-        public string Conteudo { get; set; }
+        public string Titulo { get; set; } = string.Empty;
+        public string Conteudo { get; set; } = string.Empty;
     }
 
     class DocumentoPdf {
-        public string Titulo { get; set; }
-        public string NomeFicheiro { get; set; }
-        public string CaminhoFicheiro { get; set; }
+        public string Titulo { get; set; } = string.Empty;
+        public string NomeFicheiro { get; set; } = string.Empty;
+        public string CaminhoFicheiro { get; set; } = string.Empty;
     }
 }
