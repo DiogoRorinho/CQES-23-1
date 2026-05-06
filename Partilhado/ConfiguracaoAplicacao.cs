@@ -7,6 +7,7 @@ namespace GestorEventos.Partilhado {
     static class ConfiguracaoAplicacao {
         private const string NomeConnectionString = "GestorEventosDb";
         private const string ChavePastaPdfs = "PastaPdfs";
+        private const string ChaveSeedDemoData = "SeedDemoData";
         private static readonly Lazy<IConfigurationRoot> Configuracao = new Lazy<IConfigurationRoot>(CriarConfiguracao);
 
         public static string ObterConnectionString() {
@@ -25,6 +26,11 @@ namespace GestorEventos.Partilhado {
 
         public static string CombinarCaminhoPdf(string nomeFicheiro) {
             return Path.Combine(ObterPastaPdfs(), nomeFicheiro);
+        }
+
+        public static bool DeveSemearDadosDemo() {
+            string? valorConfigurado = Configuracao.Value[ChaveSeedDemoData];
+            return bool.TryParse(valorConfigurado, out bool deveSemear) && deveSemear;
         }
 
         private static IConfigurationRoot CriarConfiguracao() {
