@@ -8,7 +8,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using GestorEventos.Dados;
 using GestorEventos.Partilhado;
+using Microsoft.Data.Sqlite;
 
 namespace GestorEventos.Eventos {
     class EventoModel {
@@ -33,7 +36,23 @@ namespace GestorEventos.Eventos {
                 return;
             }
 
-            // Aqui ficarão a validação e o INSERT SQLite do evento.
+            if (string.IsNullOrWhiteSpace(dados.Nome) ||
+                string.IsNullOrWhiteSpace(dados.Local) ||
+                dados.Capacidade <= 0) {
+                return;
+            }
+
+            using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
+            using SqliteTransaction transacao = ligacao.BeginTransaction();
+            using SqliteCommand comando = ligacao.CreateCommand();
+            comando.Transaction = transacao;
+            comando.CommandText = @"
+                INSERT INTO eventos (nome, local, data, estado, capacidade)
+                VALUES (@nome, @local, @data, 'ativo', @capacidade);";
+
+            AdicionarParametrosEvento(comando, dados);
+            comando.ExecuteNonQuery();
+            transacao.Commit();
         }
 
         public List<Evento> ListarEventos() {
@@ -41,25 +60,21 @@ namespace GestorEventos.Eventos {
         }
 
         public List<Evento> ObterListaEventos() {
-            // Aqui ficará a query SQLite para obter eventos.
-            return new List<Evento> {
-                new Evento {
-                    Id = 1,
-                    Nome = "Workshop de Arquitetura",
-                    Local = "Lisboa",
-                    Data = new DateTime(2026, 5, 15),
-                    Estado = "ativo",
-                    Capacidade = 30
-                },
-                new Evento {
-                    Id = 2,
-                    Nome = "Seminario MVC",
-                    Local = "Porto",
-                    Data = new DateTime(2026, 6, 10),
-                    Estado = "ativo",
-                    Capacidade = 50
-                }
-            };
+            List<Evento> eventos = new List<Evento>();
+
+            using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
+            using SqliteCommand comando = ligacao.CreateCommand();
+            comando.CommandText = @"
+                SELECT id, nome, local, data, estado, capacidade
+                FROM eventos
+                ORDER BY data, id;";
+
+            using SqliteDataReader leitor = comando.ExecuteReader();
+            while (leitor.Read()) {
+                eventos.Add(MapearEvento(leitor));
+            }
+
+            return eventos;
         }
 
         public Evento? ObterEvento(int idEvento) {
@@ -71,10 +86,17 @@ namespace GestorEventos.Eventos {
                 return null;
             }
 
-            foreach (Evento evento in ObterListaEventos()) {
-                if (evento.Id == idEvento) {
-                    return evento;
-                }
+            using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
+            using SqliteCommand comando = ligacao.CreateCommand();
+            comando.CommandText = @"
+                SELECT id, nome, local, data, estado, capacidade
+                FROM eventos
+                WHERE id = @id;";
+            comando.Parameters.AddWithValue("@id", idEvento);
+
+            using SqliteDataReader leitor = comando.ExecuteReader();
+            if (leitor.Read()) {
+                return MapearEvento(leitor);
             }
 
             return null;
@@ -93,7 +115,34 @@ namespace GestorEventos.Eventos {
                 return;
             }
 
-            // Aqui ficarão a validação e o UPDATE SQLite do evento.
+            if (string.IsNullOrWhiteSpace(dados.Nome) ||
+                string.IsNullOrWhiteSpace(dados.Local) ||
+                dados.Capacidade <= 0) {
+                return;
+            }
+
+            int quantidadeInscrita = ObterQuantidadeInscritaAtiva(idEvento);
+            if (quantidadeInscrita > dados.Capacidade) {
+                return;
+            }
+
+            using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
+            using SqliteTransaction transacao = ligacao.BeginTransaction();
+            using SqliteCommand comando = ligacao.CreateCommand();
+            comando.Transaction = transacao;
+            comando.CommandText = @"
+                UPDATE eventos
+                SET nome = @nome,
+                    local = @local,
+                    data = @data,
+                    capacidade = @capacidade,
+                    atualizado_em = CURRENT_TIMESTAMP
+                WHERE id = @id;";
+
+            comando.Parameters.AddWithValue("@id", idEvento);
+            AdicionarParametrosEvento(comando, dados);
+            comando.ExecuteNonQuery();
+            transacao.Commit();
         }
 
         // FUTURA MELHORIA:
@@ -118,7 +167,38 @@ namespace GestorEventos.Eventos {
                 return;
             }
 
-            // Aqui ficará o UPDATE SQLite do estado do evento.
+            using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
+            using SqliteTransaction transacao = ligacao.BeginTransaction();
+            using SqliteCommand comando = ligacao.CreateCommand();
+            comando.Transaction = transacao;
+            comando.CommandText = @"
+                UPDATE eventos
+                SET estado = @estado,
+                    atualizado_em = CURRENT_TIMESTAMP,
+                    cancelado_em = CASE
+                        WHEN @estado = 'cancelado' THEN CURRENT_TIMESTAMP
+                        ELSE cancelado_em
+                    END
+                WHERE id = @id;";
+
+            comando.Parameters.AddWithValue("@id", idEvento);
+            comando.Parameters.AddWithValue("@estado", estado);
+            comando.ExecuteNonQuery();
+            transacao.Commit();
+        }
+
+        private int ObterQuantidadeInscritaAtiva(int idEvento) {
+            using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
+            using SqliteCommand comando = ligacao.CreateCommand();
+            comando.CommandText = @"
+                SELECT COALESCE(SUM(quantidade), 0)
+                FROM inscricoes
+                WHERE id_evento = @idEvento
+                  AND estado = 'ativa';";
+            comando.Parameters.AddWithValue("@idEvento", idEvento);
+
+            object? resultado = comando.ExecuteScalar();
+            return Convert.ToInt32(resultado);
         }
 
         private void DispararEventoCancelado(Evento eventoCancelado) {
@@ -133,6 +213,24 @@ namespace GestorEventos.Eventos {
 
         public string ObterConnectionString() {
             return connectionString;
+        }
+
+        private static void AdicionarParametrosEvento(SqliteCommand comando, DadosEvento dados) {
+            comando.Parameters.AddWithValue("@nome", dados.Nome.Trim());
+            comando.Parameters.AddWithValue("@local", dados.Local.Trim());
+            comando.Parameters.AddWithValue("@data", dados.Data.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            comando.Parameters.AddWithValue("@capacidade", dados.Capacidade);
+        }
+
+        private static Evento MapearEvento(SqliteDataReader leitor) {
+            return new Evento {
+                Id = leitor.GetInt32(0),
+                Nome = leitor.GetString(1),
+                Local = leitor.GetString(2),
+                Data = DateTime.Parse(leitor.GetString(3), CultureInfo.InvariantCulture),
+                Estado = leitor.GetString(4),
+                Capacidade = leitor.GetInt32(5)
+            };
         }
     }
 }
