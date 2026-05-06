@@ -28,14 +28,14 @@ Quando um evento é cancelado, a aplicação aciona o processo associado ao canc
 
 ## Estado atual
 
-A aplicação já tem os principais menus e fluxos encaminhados, mas ainda não está ligada a uma base de dados real.
+A aplicação já tem os principais menus e fluxos encaminhados e inclui um primeiro draft de persistência em SQLite.
 
-Neste momento, alguns dados são simulados no próprio código para demonstrar o funcionamento dos menus, das listagens e dos relatórios. Também a geração de PDFs e o envio de notificações estão preparados como intenção de funcionamento, mas ainda não geram documentos reais nem enviam mensagens reais.
+A base de dados é criada automaticamente no arranque da aplicação, usando os scripts SQL existentes na pasta `Dados/Sql/`. Quando a configuração `SeedDemoData` está ativa no ficheiro `appsettings.json`, a aplicação também insere dados de demonstração se a base de dados estiver vazia.
+
+Também a geração de PDFs e o envio de notificações estão preparados como intenção de funcionamento, mas ainda não geram documentos reais nem enviam mensagens reais.
 
 Funcionalidades ainda previstas:
 
-- guardar e consultar eventos numa base de dados SQLite;
-- guardar e consultar inscrições numa base de dados SQLite;
 - aplicar validações completas às regras de negócio;
 - gerar PDFs reais para bilhetes e comprovativos;
 - enviar notificações reais aos participantes;
@@ -69,7 +69,8 @@ O ficheiro `appsettings.json` guarda valores de configuração usados pela aplic
   "ConnectionStrings": {
     "GestorEventosDb": "Data Source=gestoreventos.db"
   },
-  "PastaPdfs": "Pdfs"
+  "PastaPdfs": "Pdfs",
+  "SeedDemoData": true
 }
 ```
 
@@ -77,6 +78,21 @@ Estes valores indicam:
 
 - o nome e localização previstos para a base de dados;
 - a pasta onde serão guardados os PDFs gerados.
+- se devem ser inseridos dados de demonstração quando a base de dados está vazia.
+
+## Base de dados SQLite
+
+A estrutura da base de dados está separada do código C#:
+
+- `Dados/Sql/schema.sql` - cria as tabelas, relações, constraints e índices.
+- `Dados/Sql/seed-demo.sql` - insere dados de demonstração para a primeira execução.
+
+O schema inclui:
+
+- `eventos` - dados principais dos eventos, estado, capacidade e timestamps.
+- `inscricoes` - inscrições associadas a eventos através de foreign key.
+
+A aplicação usa soft-delete através do campo `estado`, por exemplo `ativo`, `cancelado`, `ativa`, `cancelada` e `cancelada_por_evento`. As operações principais usam SQLite através dos Models, mantendo a separação MVC.
 
 ## Organização dos ficheiros
 
@@ -86,6 +102,7 @@ O projeto está organizado por áreas:
 - `Eventos/` - gestão de eventos e cancelamentos.
 - `Inscricoes/` - gestão de inscrições e bilhetes.
 - `Relatorios/` - consulta e apresentação de relatórios.
+- `Dados/` - inicialização da base de dados e scripts SQL.
 - `Partilhado/` - modelos e configuração comuns às várias áreas.
 
 Ficheiros principais:
