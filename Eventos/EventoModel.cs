@@ -145,8 +145,12 @@ namespace GestorEventos.Eventos {
                 return CriarResultado(false, "Evento nao encontrado.");
             }
 
+            if (!string.Equals(eventoCancelado.Estado, "ativo", StringComparison.OrdinalIgnoreCase)) {
+                return CriarResultado(false, "Evento ja se encontra cancelado.");
+            }
+
             if (!AtualizarEstadoEvento(idEvento, "cancelado")) {
-                return CriarResultado(false, "Nao foi possivel cancelar o evento.");
+                return CriarResultado(false, "Evento ja se encontra cancelado.");
             }
 
             eventoCancelado.Estado = "cancelado";
@@ -169,10 +173,11 @@ namespace GestorEventos.Eventos {
                 SET estado = @estado,
                     atualizado_em = CURRENT_TIMESTAMP,
                     cancelado_em = CASE
-                        WHEN @estado = 'cancelado' THEN CURRENT_TIMESTAMP
+                        WHEN @estado = 'cancelado' AND cancelado_em IS NULL THEN CURRENT_TIMESTAMP
                         ELSE cancelado_em
                     END
-                WHERE id = @id;";
+                WHERE id = @id
+                  AND (@estado <> 'cancelado' OR estado = 'ativo');";
 
             comando.Parameters.AddWithValue("@id", idEvento);
             comando.Parameters.AddWithValue("@estado", estado);
