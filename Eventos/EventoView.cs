@@ -15,10 +15,6 @@ namespace GestorEventos.Eventos {
             Console.Write("Escolha uma opcao: ");
         }
 
-        public string LerEntrada() {                        // Este método deve passar ao Controller (input)
-            return Console.ReadLine() ?? string.Empty;
-        }
-
         public void SolicitarDadosCriacao() {
             Console.WriteLine();
             Console.WriteLine("Formulario de criacao de evento.");
@@ -74,7 +70,14 @@ namespace GestorEventos.Eventos {
 
         public void MostrarDadosParaEdicao(Evento dadosEvento) {
             Console.WriteLine();
-            Console.WriteLine(string.Format("Evento selecionado: {0}", dadosEvento.Nome));
+            Console.WriteLine(string.Format(
+                "Evento selecionado: {0} - {1} | {2:dd/MM/yyyy} | {3} | capacidade: {4}",
+                dadosEvento.Id,
+                dadosEvento.Nome,
+                dadosEvento.Data,
+                dadosEvento.Local,
+                dadosEvento.Capacidade));
+            Console.WriteLine("Prima Enter para manter o valor atual.");
         }
 
         public void MostrarResultadoOperacao(string mensagem) {
