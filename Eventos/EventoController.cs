@@ -89,8 +89,8 @@ namespace GestorEventos.Eventos {
                 return;
             }
 
-            model.CriarEvento(dados);
-            view.MostrarResultadoOperacao("Evento criado com sucesso.");
+            ResultadoOperacaoEvento resultado = model.CriarEvento(dados);
+            view.MostrarResultadoOperacao(resultado.Mensagem);
         }
 
         // Deve permitir que o user altere só o campo pretendido, Enter para manter (e não precisa validar)
@@ -120,8 +120,8 @@ namespace GestorEventos.Eventos {
                 return;
             }
 
-            model.AlterarEvento(idEvento, dados);                               // Nota: o Model ainda nao devolve confirmacao de sucesso/falha, mas o Controller assume sucesso se nao for lancada excecao.
-            view.MostrarResultadoOperacao("Evento alterado com sucesso.");      // Nota: a mensagem de sucesso e a sua apresentacao pelo Controller deverao ser alinhadas com o resultado real da operacao, quando a validacao completa e a integracao com SQLite estiverem consolidadas.
+            ResultadoOperacaoEvento resultado = model.AlterarEvento(idEvento, dados);
+            view.MostrarResultadoOperacao(resultado.Mensagem);
         }
 
         private void CancelarEvento() {
@@ -149,8 +149,8 @@ namespace GestorEventos.Eventos {
                 return;
             }
 
-            model.CancelarEvento(idEvento);                                     // Nota: o Model ainda nao devolve confirmacao de sucesso/falha, mas o Controller assume sucesso se nao for lancada excecao.
-            view.MostrarResultadoOperacao("Evento cancelado com sucesso.");     // Nota: a mensagem de sucesso e a sua apresentacao pelo Controller deverao ser alinhadas com o resultado real da operacao, quando a validacao completa e a integracao com SQLite estiverem consolidadas.
+            ResultadoOperacaoEvento resultado = model.CancelarEvento(idEvento);
+            view.MostrarResultadoOperacao(resultado.Mensagem);
         }
 
         private void ListarEventos() {

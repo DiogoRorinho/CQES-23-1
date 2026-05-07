@@ -1,11 +1,3 @@
-// NOTA DE VERIFICACAO:
-// Nesta versao, os metodos de criacao, alteracao e cancelamento de eventos
-// nao devolvem ainda um resultado estruturado de sucesso/falha ao Controller.
-// Numa iteracao posterior, e em alinhamento com o que ja foi adotado no modulo
-// de Inscricoes, podera fazer sentido adaptar estes metodos para devolverem
-// um objeto de resultado com confirmacao da operacao e mensagem associada,
-// sobretudo quando a validacao completa e a integracao com SQLite estiverem consolidadas.
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -24,22 +16,19 @@ namespace GestorEventos.Eventos {
             connectionString = ConfiguracaoAplicacao.ObterConnectionString();
         }
 
-        // FUTURA MELHORIA:
-        // devolver resultado estruturado (sucesso/mensagem) ao Controller,
-        // em vez de este assumir sucesso apos chamada ao Model.
-        public void CriarEvento(DadosEvento dados) {
-            ValidarERegistarEvento(dados);
+        public ResultadoOperacaoEvento CriarEvento(DadosEvento dados) {
+            return ValidarERegistarEvento(dados);
         }
 
-        public void ValidarERegistarEvento(DadosEvento dados) {
+        public ResultadoOperacaoEvento ValidarERegistarEvento(DadosEvento dados) {
             if (dados == null) {
-                return;
+                return CriarResultado(false, "Dados do evento invalidos.");
             }
 
             if (string.IsNullOrWhiteSpace(dados.Nome) ||
                 string.IsNullOrWhiteSpace(dados.Local) ||
                 dados.Capacidade <= 0) {
-                return;
+                return CriarResultado(false, "Dados do evento invalidos.");
             }
 
             using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
@@ -53,6 +42,8 @@ namespace GestorEventos.Eventos {
             AdicionarParametrosEvento(comando, dados);
             comando.ExecuteNonQuery();
             transacao.Commit();
+
+            return CriarResultado(true, "Evento criado com sucesso.");
         }
 
         public List<Evento> ListarEventos() {
@@ -102,28 +93,24 @@ namespace GestorEventos.Eventos {
             return null;
         }
 
-        // FUTURA MELHORIA:
-        // devolver resultado estruturado (sucesso/mensagem) ao Controller,
-        // em vez de este assumir sucesso apos chamada ao Model.
-        // Verificar se existem inscricoes que ultrapassem a nova capacidade, e impedir a alteracao se for o caso, por exemplo.
-        public void AlterarEvento(int idEvento, DadosEvento dados) {
-            ValidarEAtualizarEvento(idEvento, dados);
+        public ResultadoOperacaoEvento AlterarEvento(int idEvento, DadosEvento dados) {
+            return ValidarEAtualizarEvento(idEvento, dados);
         }
 
-        public void ValidarEAtualizarEvento(int idEvento, DadosEvento dados) {
+        public ResultadoOperacaoEvento ValidarEAtualizarEvento(int idEvento, DadosEvento dados) {
             if (idEvento <= 0 || dados == null) {
-                return;
+                return CriarResultado(false, "ID de evento invalido.");
             }
 
             if (string.IsNullOrWhiteSpace(dados.Nome) ||
                 string.IsNullOrWhiteSpace(dados.Local) ||
                 dados.Capacidade <= 0) {
-                return;
+                return CriarResultado(false, "Dados do evento invalidos.");
             }
 
             int quantidadeInscrita = ObterQuantidadeInscritaAtiva(idEvento);
             if (quantidadeInscrita > dados.Capacidade) {
-                return;
+                return CriarResultado(false, "A capacidade nao pode ser inferior ao numero de inscricoes ativas.");
             }
 
             using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
@@ -141,30 +128,36 @@ namespace GestorEventos.Eventos {
 
             comando.Parameters.AddWithValue("@id", idEvento);
             AdicionarParametrosEvento(comando, dados);
-            comando.ExecuteNonQuery();
+            int linhasAfetadas = comando.ExecuteNonQuery();
             transacao.Commit();
+
+            if (linhasAfetadas == 0) {
+                return CriarResultado(false, "Evento nao encontrado.");
+            }
+
+            return CriarResultado(true, "Evento alterado com sucesso.");
         }
 
-        // FUTURA MELHORIA:
-        // devolver resultado estruturado (sucesso/mensagem) ao Controller,
-        // em vez de este assumir sucesso apos chamada ao Model. 
-        // ex. validação idEvento, atualizacao estado, evento já cancelado, ausência de subscritores, etc
-        public void CancelarEvento(int idEvento) {
+        public ResultadoOperacaoEvento CancelarEvento(int idEvento) {
             Evento? eventoCancelado = ObterEvento(idEvento);
 
             if (eventoCancelado == null) {
-                return;
+                return CriarResultado(false, "Evento nao encontrado.");
             }
 
-            AtualizarEstadoEvento(idEvento, "cancelado");
+            if (!AtualizarEstadoEvento(idEvento, "cancelado")) {
+                return CriarResultado(false, "Nao foi possivel cancelar o evento.");
+            }
+
             eventoCancelado.Estado = "cancelado";
 
             DispararEventoCancelado(eventoCancelado);
+            return CriarResultado(true, "Evento cancelado com sucesso.");
         }
 
-        public void AtualizarEstadoEvento(int idEvento, string estado) {
+        public bool AtualizarEstadoEvento(int idEvento, string estado) {
             if (idEvento <= 0 || string.IsNullOrWhiteSpace(estado)) {
-                return;
+                return false;
             }
 
             using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
@@ -183,8 +176,10 @@ namespace GestorEventos.Eventos {
 
             comando.Parameters.AddWithValue("@id", idEvento);
             comando.Parameters.AddWithValue("@estado", estado);
-            comando.ExecuteNonQuery();
+            int linhasAfetadas = comando.ExecuteNonQuery();
             transacao.Commit();
+
+            return linhasAfetadas > 0;
         }
 
         private int ObterQuantidadeInscritaAtiva(int idEvento) {
@@ -213,6 +208,13 @@ namespace GestorEventos.Eventos {
 
         public string ObterConnectionString() {
             return connectionString;
+        }
+
+        private static ResultadoOperacaoEvento CriarResultado(bool sucesso, string mensagem) {
+            return new ResultadoOperacaoEvento {
+                Sucesso = sucesso,
+                Mensagem = mensagem
+            };
         }
 
         private static void AdicionarParametrosEvento(SqliteCommand comando, DadosEvento dados) {

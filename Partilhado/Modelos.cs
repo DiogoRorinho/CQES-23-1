@@ -17,6 +17,11 @@ namespace GestorEventos.Partilhado {
         public int Capacidade { get; set; }
     }
 
+    class ResultadoOperacaoEvento {
+        public bool Sucesso { get; set; }
+        public string Mensagem { get; set; } = string.Empty;
+    }
+
     class Inscricao {
         public int Id { get; set; }
         public int IdEvento { get; set; }
