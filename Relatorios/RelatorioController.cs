@@ -66,6 +66,11 @@ namespace GestorEventos.Relatorios {
                 return;
             }
 
+            if (!model.EventoExiste(idEvento)) {
+                view.MostrarMensagem("Evento nao encontrado.");
+                return;
+            }
+
             SelecionarEvento(idEvento);
         }
 
