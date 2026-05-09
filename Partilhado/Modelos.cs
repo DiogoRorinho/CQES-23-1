@@ -25,8 +25,11 @@ namespace GestorEventos.Partilhado {
     class Inscricao {
         public int Id { get; set; }
         public int IdEvento { get; set; }
+        public string NomeParticipante { get; set; } = string.Empty;
+        public int IdadeParticipante { get; set; }
         public string Estado { get; set; } = string.Empty;
         public string EmailParticipante { get; set; } = string.Empty;
+        public int Quantidade { get; set; } = 1;
     }
 
     class DadosInscricao {
