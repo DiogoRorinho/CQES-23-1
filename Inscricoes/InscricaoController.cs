@@ -20,6 +20,7 @@ namespace GestorEventos.Inscricoes
             this.model = model;
         }
 
+        // Metodo principal para mostrar o menu de inscricoes e processar as opcoes selecionadas
         public void MostrarMenuModulo()
         {
             regressarMenuPrincipal = false;
@@ -41,7 +42,7 @@ namespace GestorEventos.Inscricoes
                 }
             }
         }
-
+        
         public bool SelecionarOpcao(string opcao)
         {
             switch (NormalizarOpcao(opcao))
@@ -72,6 +73,7 @@ namespace GestorEventos.Inscricoes
             }
         }
 
+        // Metodo para criar uma nova inscricao, solicitando os dados necessarios e validando as entradas
         private void CriarInscricao()
         {
             List<Evento> eventosDisponiveis = model.ListarEventosDisponiveis();
@@ -84,6 +86,13 @@ namespace GestorEventos.Inscricoes
 
             view.MostrarListaEventos(eventosDisponiveis);
             view.SolicitarDadosCriacao();
+
+            int idEvento = LerIdEventoValido(eventosDisponiveis);
+
+            if (idEvento == 0)
+            {
+                return;
+            }
 
             DadosInscricao dados = new DadosInscricao
             {
@@ -105,6 +114,7 @@ namespace GestorEventos.Inscricoes
             view.MostrarMensagem(resultado.Mensagem);
         }
 
+        // Metodo para alterar uma inscricao existente, permitindo ao utilizador escolher a inscricao a alterar e os novos dados
         private void AlterarInscricao()
         {
             List<Inscricao> inscricoes = model.ListarInscricoes();
@@ -139,6 +149,7 @@ namespace GestorEventos.Inscricoes
             IntroduzirDadosAlterados(idInscricao, dados);
         }
 
+        // Metodo para cancelar uma inscricao existente, permitindo ao utilizador escolher a inscricao a cancelar e confirmando a operacao
         private void CancelarInscricao()
         {
             List<Inscricao> inscricoes = model.ListarInscricoes();
@@ -183,6 +194,7 @@ namespace GestorEventos.Inscricoes
             view.MostrarListaInscricoes(model.ListarInscricoes());
         }
 
+        // Metodo auxiliar para recolher os dados de alteracao de uma inscricao, permitindo ao utilizador manter os valores atuais ou introduzir novos valores
         private DadosInscricao RecolherDadosAlteracaoInscricao(Inscricao inscricao)
         {
             return new DadosInscricao
@@ -205,6 +217,7 @@ namespace GestorEventos.Inscricoes
             };
         }
 
+        // Metodo auxiliar para ler um ID de evento valido, verificando se o ID introduzido corresponde a um evento disponivel
         private int LerIdEventoValido(List<Evento> eventosDisponiveis)
         {
             while (true)
@@ -212,10 +225,16 @@ namespace GestorEventos.Inscricoes
                 view.SolicitarIdEvento();
                 string entrada = LerEntrada();
 
-                if (!int.TryParse(entrada, out int idEvento) || idEvento <= 0)
+                if (!int.TryParse(entrada, out int idEvento) || idEvento < 0)
                 {
                     view.MostrarMensagem("ID de evento invalido.");
                     continue;
+                }
+
+                if (idEvento == 0)
+                {
+                    view.MostrarMensagem("Criacao de inscricao cancelada.");
+                    return 0;
                 }
 
                 foreach (Evento evento in eventosDisponiveis)
@@ -230,6 +249,7 @@ namespace GestorEventos.Inscricoes
             }
         }
 
+        // Metodo auxiliar para ler um texto nao vazio, solicitando ao utilizador que introduza um valor e validando que o valor nao esta vazio ou composto apenas por espacos
         private string LerTextoNaoVazio(string pedido)
         {
             while (true)
@@ -246,6 +266,7 @@ namespace GestorEventos.Inscricoes
             }
         }
 
+        // Metodo auxiliar para ler um texto alteravel, permitindo ao utilizador manter o valor atual ou introduzir um novo valor, validando que o valor introduzido nao esta vazio ou composto apenas por espacos
         private string LerTextoAlteravel(string pedido, string valorAtual)
         {
             view.SolicitarCampoTexto(pedido);
@@ -259,6 +280,7 @@ namespace GestorEventos.Inscricoes
             return valor.Trim();
         }
 
+        // Metodo auxiliar para ler um numero inteiro positivo, solicitando ao utilizador que introduza um valor e validando que o valor e um numero inteiro positivo
         private int LerInteiroPositivo(string pedido)
         {
             while (true)
@@ -274,6 +296,7 @@ namespace GestorEventos.Inscricoes
             }
         }
 
+        // Metodo auxiliar para ler um numero inteiro positivo alteravel, permitindo ao utilizador manter o valor atual ou introduzir um novo valor, validando que o valor introduzido e um numero inteiro positivo
         private int LerInteiroPositivoAlteravel(string pedido, int valorAtual)
         {
             while (true)
@@ -295,6 +318,7 @@ namespace GestorEventos.Inscricoes
             }
         }
 
+        // Metodo auxiliar para ler um numero inteiro positivo da entrada, validando que o valor introduzido e um numero inteiro positivo, retornando 0 em caso de valor invalido
         private int LerInteiroPositivoDaEntrada()
         {
             string entrada = LerEntrada();
@@ -312,6 +336,7 @@ namespace GestorEventos.Inscricoes
             return Console.ReadLine() ?? string.Empty;
         }
 
+        // Metodo auxiliar para normalizar a opcao introduzida pelo utilizador, removendo espacos em branco e convertendo para minusculas, facilitando a comparacao das opcoes
         private string NormalizarOpcao(string? opcao)
         {
             if (string.IsNullOrWhiteSpace(opcao))
@@ -322,11 +347,13 @@ namespace GestorEventos.Inscricoes
             return opcao.Trim().ToLowerInvariant();
         }
 
+        // Metodo para regressar ao menu principal, sinalizando a intencao de regressar e permitindo que o loop principal do menu de inscricoes seja interrompido
         public void RegressarMenuPrincipal()
         {
             aplicacaoController.RegressarMenuPrincipal();
         }
 
+        // Metodo para selecionar uma inscricao existente, verificando se a inscricao existe e esta ativa, e mostrando os dados da inscricao para edicao
         public void SelecionarInscricao(int idInscricao)
         {
             Inscricao? inscricao = model.ObterInscricao(idInscricao);
@@ -340,6 +367,7 @@ namespace GestorEventos.Inscricoes
             view.MostrarDadosParaEdicao(inscricao);
         }
 
+        // Metodo para introduzir os dados alterados de uma inscricao, validando os dados e realizando a alteracao da inscricao, mostrando o resultado da operacao e o bilhete atualizado em caso de sucesso
         public void IntroduzirDadosAlterados(int idInscricao, DadosInscricao dados)
         {
             if (model.ValidarAlteracaoInscricao(idInscricao, dados))
@@ -352,11 +380,13 @@ namespace GestorEventos.Inscricoes
             view.MostrarErroSemVagas();
         }
 
+        // Metodo para pedir confirmacao de cancelamento de uma inscricao, solicitando ao utilizador que confirme a intencao de cancelar a inscricao selecionada
         public void PedirConfirmacaoCancelamento()
         {
             view.PedirConfirmacaoCancelamento();
         }
 
+        // Metodo para confirmar o cancelamento de uma inscricao, realizando o cancelamento da inscricao selecionada e mostrando o resultado da operacao e o comprovativo de cancelamento em caso de sucesso
         public void ConfirmarCancelamento(int idInscricao)
         {
             model.CancelarInscricao(idInscricao);

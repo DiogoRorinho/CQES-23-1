@@ -17,17 +17,20 @@ namespace GestorEventos.Inscricoes
         private readonly string connectionString;
         private readonly string pastaPdfs;
 
+        // Construtor que inicializa as configurações necessárias para o modelo de inscrição
         public InscricaoModel()
         {
             connectionString = ConfiguracaoAplicacao.ObterConnectionString();
             pastaPdfs = ConfiguracaoAplicacao.ObterPastaPdfs();
         }
 
+        // Lista os eventos que possuem vagas disponíveis para inscrição
         public List<Evento> ListarEventosDisponiveis()
         {
             return ObterEventosComDisponibilidade();
         }
 
+        // Obtém a lista de eventos que ainda possuem vagas disponíveis, considerando as inscrições ativas
         public List<Evento> ObterEventosComDisponibilidade()
         {
             List<Evento> eventos = new List<Evento>();
@@ -54,11 +57,13 @@ namespace GestorEventos.Inscricoes
             return eventos;
         }
 
+        // Verifica se é possível realizar uma inscrição para um evento específico, considerando a quantidade desejada
         public bool VerificarDisponibilidade(int idEvento, int quantidade)
         {
             return ValidarDisponibilidade(idEvento, quantidade);
         }
 
+        // Valida se existem vagas suficientes para realizar uma inscrição no evento indicado, considerando a quantidade desejada
         public bool ValidarDisponibilidade(int idEvento, int quantidade)
         {
             if (idEvento <= 0 || quantidade <= 0)
@@ -78,6 +83,7 @@ namespace GestorEventos.Inscricoes
             return evento.Capacidade - quantidadeInscrita >= quantidade;
         }
 
+        // Cria uma nova inscrição para um evento, validando os dados e a disponibilidade, e gerando um bilhete em PDF
         public ResultadoCriacaoInscricao CriarInscricao(DadosInscricao dados)
         {
             if (!DadosInscricaoValidos(dados))
@@ -95,6 +101,7 @@ namespace GestorEventos.Inscricoes
             return CriarResultado(true, "Inscricao criada com sucesso.", bilhetePdf);
         }
 
+        // Valida os dados de inscrição, registra a inscrição no banco de dados e gera um bilhete em PDF para o participante
         public DocumentoPdf ValidarRegistarInscricaoEGerarBilhete(DadosInscricao dados)
         {
             if (!DadosInscricaoValidos(dados))
@@ -141,6 +148,7 @@ namespace GestorEventos.Inscricoes
                 Estado = "ativa"
             };
 
+            // Gerar o bilhete em PDF para a inscrição criada
             DocumentoPdf bilhetePdf = CriarDocumentoPdf(
                 "Bilhete de inscricao",
                 "bilhete-inscricao-" + idInscricao + ".pdf");
@@ -149,11 +157,13 @@ namespace GestorEventos.Inscricoes
             return bilhetePdf;
         }
 
+        // Lista todas as inscrições registradas no sistema, independentemente do estado ou evento associado
         public List<Inscricao> ListarInscricoes()
         {
             return ObterListaInscricoes();
         }
 
+        // Obtém a lista completa de inscrições, incluindo detalhes como participante, evento e estado da inscrição
         public List<Inscricao> ObterListaInscricoes()
         {
             List<Inscricao> inscricoes = new List<Inscricao>();
@@ -175,11 +185,13 @@ namespace GestorEventos.Inscricoes
             return inscricoes;
         }
 
+        // Obtém os detalhes de uma inscrição específica com base no seu ID, retornando null se a inscrição não for encontrada
         public Inscricao? ObterInscricao(int idInscricao)
         {
             return ObterDadosInscricao(idInscricao);
         }
 
+        // Obtém os detalhes completos de uma inscrição específica, incluindo informações do participante e do evento associado, com base no ID da inscrição
         public Inscricao? ObterDadosInscricao(int idInscricao)
         {
             if (idInscricao <= 0)
@@ -205,11 +217,13 @@ namespace GestorEventos.Inscricoes
             return null;
         }
 
+        // Verifica se é possível realizar uma alteração em uma inscrição existente, considerando o evento de destino e a quantidade desejada
         public bool ValidarAlteracaoInscricao(int idInscricao, DadosInscricao dados)
         {
             return VerificarSeAlteracaoEhPossivel(idInscricao, dados);
         }
 
+        // Verifica se uma alteração em uma inscrição é possível, validando os dados fornecidos e verificando a disponibilidade no evento de destino, considerando a quantidade desejada
         public bool VerificarSeAlteracaoEhPossivel(int idInscricao, DadosInscricao dados)
         {
             if (idInscricao <= 0 || !DadosInscricaoValidos(dados))
@@ -233,11 +247,13 @@ namespace GestorEventos.Inscricoes
             return eventoDestino.Capacidade - quantidadeInscrita >= dados.Quantidade;
         }
 
+        // Realiza a alteração de uma inscrição existente, atualizando os dados no banco de dados e gerando um novo bilhete em PDF para o participante
         public DocumentoPdf AlterarInscricao(int idInscricao, DadosInscricao dados)
         {
             return ValidarAtualizarInscricaoEGerarBilhete(idInscricao, dados);
         }
 
+        // Valida os dados para atualização de uma inscrição, realiza a alteração no banco de dados e gera um novo bilhete em PDF refletindo as mudanças realizadas
         public DocumentoPdf ValidarAtualizarInscricaoEGerarBilhete(int idInscricao, DadosInscricao dados)
         {
             if (!VerificarSeAlteracaoEhPossivel(idInscricao, dados))
@@ -270,6 +286,7 @@ namespace GestorEventos.Inscricoes
                 throw new InvalidOperationException("Inscricao nao encontrada ou indisponivel para alteracao.");
             }
 
+            // Gerar o bilhete atualizado em PDF para a inscrição alterada
             Inscricao inscricaoAtualizada = ObterInscricao(idInscricao) ?? new Inscricao();
             Evento? evento = ObterEvento(dados.IdEvento);
 
@@ -281,11 +298,13 @@ namespace GestorEventos.Inscricoes
             return bilhetePdf;
         }
 
+        // Cancela uma inscrição existente, atualizando seu estado para "cancelada" no banco de dados, desde que a inscrição esteja atualmente ativa
         public void CancelarInscricao(int idInscricao)
         {
             AtualizarEstadoInscricao(idInscricao, "cancelada");
         }
 
+        // Atualiza o estado de uma inscrição para um novo valor, permitindo a transição para estados como "cancelada" ou "cancelada_por_evento", e registrando a data de cancelamento quando aplicável
         public void AtualizarEstadoInscricao(int idInscricao, string estado)
         {
             if (idInscricao <= 0 || string.IsNullOrWhiteSpace(estado))
@@ -313,6 +332,7 @@ namespace GestorEventos.Inscricoes
             transacao.Commit();
         }
 
+        // Obtém a lista de inscrições ativas que estão associadas a um evento específico, permitindo identificar os participantes afetados por alterações ou cancelamentos do evento
         public List<Inscricao> ObterInscritosAfetados(int idEvento)
         {
             List<Inscricao> resultados = new List<Inscricao>();
@@ -342,11 +362,13 @@ namespace GestorEventos.Inscricoes
             return resultados;
         }
 
+        // Cancela ou invalida uma inscrição específica, atualizando seu estado para "cancelada_por_evento" no banco de dados, indicando que a inscrição foi afetada por uma alteração ou cancelamento do evento associado
         public void CancelarOuInvalidarInscricao(int idInscricao)
         {
             AtualizarEstadoInscricao(idInscricao, "cancelada_por_evento");
         }
 
+        // Gera um comprovativo de cancelamento para uma inscrição específica, criando um documento PDF que detalha as informações do cancelamento e do evento associado
         public DocumentoPdf GerarComprovativoCancelamento(int idInscricao)
         {
             Inscricao? inscricao = ObterInscricao(idInscricao);
@@ -360,16 +382,19 @@ namespace GestorEventos.Inscricoes
             return comprovativo;
         }
 
+        // Exibe o comprovativo de cancelamento para uma inscrição específica, mostrando os detalhes do cancelamento e do evento associado
         public string ObterConnectionString()
         {
             return connectionString;
         }
 
+        // Exibe a pasta onde os arquivos PDF gerados estão armazenados, permitindo que o usuário saiba onde encontrar os bilhetes e comprovativos gerados
         public string ObterPastaPdfs()
         {
             return pastaPdfs;
         }
 
+        // Cria um resultado de criação de inscrição, encapsulando o sucesso da operação, uma mensagem descritiva e um possível documento PDF gerado como bilhete
         private ResultadoCriacaoInscricao CriarResultado(bool sucesso, string mensagem, DocumentoPdf? bilhetePdf)
         {
             return new ResultadoCriacaoInscricao
@@ -380,6 +405,7 @@ namespace GestorEventos.Inscricoes
             };
         }
 
+        // Valida os dados fornecidos para a criação ou alteração de uma inscrição, garantindo que todos os campos necessários estejam preenchidos corretamente e que os valores sejam válidos
         private bool DadosInscricaoValidos(DadosInscricao dados)
         {
             return dados != null &&
@@ -390,6 +416,7 @@ namespace GestorEventos.Inscricoes
                    dados.Quantidade > 0;
         }
 
+        // Adiciona os parâmetros necessários para a criação ou alteração de uma inscrição em um comando SQL, garantindo que os valores sejam corretamente associados aos campos correspondentes na consulta
         private void AdicionarParametrosInscricao(SqliteCommand comando, DadosInscricao dados)
         {
             comando.Parameters.AddWithValue("@idEvento", dados.IdEvento);
@@ -399,12 +426,14 @@ namespace GestorEventos.Inscricoes
             comando.Parameters.AddWithValue("@quantidade", dados.Quantidade);
         }
 
+        // Obtém os detalhes de um evento específico com base no seu ID, retornando null se o evento não for encontrado ou estiver indisponível
         private Evento? ObterEvento(int idEvento)
         {
             using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
             return ObterEvento(ligacao, null, idEvento);
         }
 
+        // Obtém os detalhes de um evento específico com base no seu ID, utilizando uma conexão e transação SQL fornecidas, retornando null se o evento não for encontrado ou estiver indisponível
         private Evento? ObterEvento(SqliteConnection ligacao, SqliteTransaction? transacao, int idEvento)
         {
             if (idEvento <= 0)
@@ -433,6 +462,7 @@ namespace GestorEventos.Inscricoes
             return null;
         }
 
+        // Obtém os detalhes de uma inscrição específica com base no seu ID, utilizando
         private Inscricao? ObterInscricao(SqliteConnection ligacao, SqliteTransaction? transacao, int idInscricao)
         {
             if (idInscricao <= 0)
@@ -462,6 +492,7 @@ namespace GestorEventos.Inscricoes
             return null;
         }
 
+        // Obtém a quantidade total de inscrições ativas para um evento específico, permitindo verificar a disponibilidade de vagas considerando as inscrições existentes, e opcionalmente excluindo uma inscrição específica da contagem
         private int ObterQuantidadeInscritaAtiva(
             SqliteConnection ligacao,
             SqliteTransaction? transacao,
@@ -487,6 +518,7 @@ namespace GestorEventos.Inscricoes
             return Convert.ToInt32(resultado, CultureInfo.InvariantCulture);
         }
 
+        //
         private Evento MapearEvento(SqliteDataReader leitor)
         {
             return new Evento
@@ -500,6 +532,7 @@ namespace GestorEventos.Inscricoes
             };
         }
 
+        // Mapeia os dados de uma inscrição a partir de um leitor de dados SQL, criando um objeto Inscricao com as informações correspondentes extraídas do banco de dados
         private Inscricao MapearInscricao(SqliteDataReader leitor)
         {
             return new Inscricao
@@ -514,6 +547,7 @@ namespace GestorEventos.Inscricoes
             };
         }
 
+        // Lê um valor inteiro de uma coluna específica em um leitor de dados SQL, tratando valores nulos e garantindo que o resultado seja um inteiro válido
         private int LerInteiro(SqliteDataReader leitor, string coluna)
         {
             int ordinal = leitor.GetOrdinal(coluna);
@@ -526,6 +560,7 @@ namespace GestorEventos.Inscricoes
             return Convert.ToInt32(leitor.GetValue(ordinal), CultureInfo.InvariantCulture);
         }
 
+        // Lê um valor de texto de uma coluna específica em um leitor de dados SQL, tratando valores nulos e garantindo que o resultado seja uma string válida
         private string LerTexto(SqliteDataReader leitor, string coluna)
         {
             int ordinal = leitor.GetOrdinal(coluna);
@@ -537,7 +572,8 @@ namespace GestorEventos.Inscricoes
 
             return Convert.ToString(leitor.GetValue(ordinal), CultureInfo.InvariantCulture) ?? string.Empty;
         }
-
+        
+        // Lê um valor de data de uma coluna específica em um leitor de dados SQL, tratando valores nulos e garantindo que o resultado seja uma data válida
         private DateTime LerData(SqliteDataReader leitor, string coluna)
         {
             int ordinal = leitor.GetOrdinal(coluna);
@@ -565,6 +601,7 @@ namespace GestorEventos.Inscricoes
             return DateTime.MinValue;
         }
 
+        // Cria um objeto DocumentoPdf com as informações fornecidas, incluindo o título, nome do arquivo e caminho completo para onde o arquivo PDF será salvo
         private DocumentoPdf CriarDocumentoPdf(string titulo, string nomeFicheiro)
         {
             return new DocumentoPdf
@@ -575,6 +612,7 @@ namespace GestorEventos.Inscricoes
             };
         }
 
+        // Constrói o conteúdo textual para um bilhete de inscrição, incluindo detalhes do participante, evento e estado da inscrição, formatando as informações de maneira clara e organizada para exibição no PDF
         private string ConstruirConteudoBilhete(Inscricao inscricao, Evento? evento)
         {
             StringBuilder conteudo = new StringBuilder();
@@ -600,6 +638,7 @@ namespace GestorEventos.Inscricoes
             return conteudo.ToString();
         }
 
+        // Constrói o conteúdo textual para um comprovativo de cancelamento, incluindo detalhes do cancelamento, participante, evento e estado da inscrição, formatando as informações de maneira clara e organizada para exibição no PDF
         private string ConstruirConteudoCancelamento(Inscricao? inscricao, Evento? evento)
         {
             StringBuilder conteudo = new StringBuilder();
@@ -632,6 +671,7 @@ namespace GestorEventos.Inscricoes
             return conteudo.ToString();
         }
 
+        // Gera um arquivo PDF com o conteúdo fornecido, utilizando a biblioteca PdfSharp para criar o documento, formatar o texto e salvar o arquivo no caminho especificado
         private void GerarFicheiroPdf(DocumentoPdf documentoPdf, string conteudo)
         {
             string? pastaDestino = Path.GetDirectoryName(documentoPdf.CaminhoFicheiro);
@@ -689,6 +729,7 @@ namespace GestorEventos.Inscricoes
             documento.Save(documentoPdf.CaminhoFicheiro);
         }
 
+        // Separa o texto em linhas adequadas para exibição em um PDF, considerando a largura máxima disponível e utilizando a medição de texto da biblioteca gráfica para garantir que as linhas não ultrapassem os limites do layout
         private List<string> SepararLinhasPdf(string texto, XGraphics grafico, XFont fonte, double larguraMaxima)
         {
             List<string> linhas = new List<string>();
@@ -704,6 +745,7 @@ namespace GestorEventos.Inscricoes
             return linhas;
         }
 
+        // Quebra uma linha de texto em múltiplas linhas, garantindo que cada linha resultante não ultrapasse a largura máxima especificada, utilizando a medição de texto da biblioteca gráfica para determinar o ponto de quebra adequado
         private List<string> QuebrarLinhaPdf(string linhaOriginal, XGraphics grafico, XFont fonte, double larguraMaxima)
         {
             List<string> linhas = new List<string>();

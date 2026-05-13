@@ -4,8 +4,10 @@ using GestorEventos.Partilhado;
 
 namespace GestorEventos.Inscricoes
 {
+ 
     class InscricaoView
     {
+        // Exibe o menu de inscricoes e solicita a opcao do utilizador
         public void MostrarMenuInscricoes()
         {
             Console.WriteLine();
@@ -18,6 +20,7 @@ namespace GestorEventos.Inscricoes
             Console.Write("Opcao: ");
         }
 
+        // Exibe a lista de eventos com vagas disponiveis
         public void MostrarListaEventos(List<Evento> listaEventosComVagas)
         {
             Console.WriteLine();
@@ -41,11 +44,13 @@ namespace GestorEventos.Inscricoes
             }
         }
 
+        // Solicita o ID do evento para criar ou alterar uma inscricao
         public void SolicitarIdEvento()
         {
-            Console.Write("Indique o ID do evento: ");
+            Console.Write("Indique o ID do evento ou [0 para cancelar]: ");
         }
 
+        // Solicita um campo de texto (nome, email, etc.) com base no pedido fornecido
         public void SolicitarCampoTexto(string pedido)
         {
             Console.Write(pedido);
@@ -57,6 +62,7 @@ namespace GestorEventos.Inscricoes
             Console.WriteLine("Criacao de inscricao.");
         }
 
+        // Solicita os dados para edicao de uma inscricao, indicando que o utilizador pode manter o valor atual
         public void SolicitarDadosEdicao()
         {
             Console.WriteLine();
@@ -64,21 +70,25 @@ namespace GestorEventos.Inscricoes
             Console.WriteLine("Prima Enter para manter o valor atual.");
         }
 
+        // Solicita o ID da inscricao para alterar ou cancelar
         public void SolicitarIdInscricaoAlteracao()
         {
             Console.Write("Indique o ID da inscricao a alterar: ");
         }
 
+        // Solicita o ID da inscricao para cancelar
         public void SolicitarIdInscricaoCancelamento()
         {
             Console.Write("Indique o ID da inscricao a cancelar: ");
         }
 
+        // Exibe uma mensagem genérica
         public void MostrarMensagem(string mensagem)
         {
             Console.WriteLine(mensagem);
         }
 
+        // Exibe o resultado de uma operacao que gera um bilhete PDF, mostrando a mensagem e os detalhes do documento gerado
         public void MostrarResultadoOperacaoEBilhete(string mensagem, DocumentoPdf bilhetePdf)
         {
             Console.WriteLine(mensagem);
@@ -86,6 +96,7 @@ namespace GestorEventos.Inscricoes
             Console.WriteLine(string.Format("Caminho: {0}", bilhetePdf.CaminhoFicheiro));
         }
 
+        // Exibe a lista de inscricoes, mostrando os detalhes de cada inscricao
         public void MostrarListaInscricoes(List<Inscricao> listaInscricoes)
         {
             Console.WriteLine();
@@ -111,6 +122,7 @@ namespace GestorEventos.Inscricoes
             }
         }
 
+        // Exibe os detalhes de uma inscricao para edicao, mostrando os dados atuais da inscricao
         public void MostrarDadosParaEdicao(Inscricao dadosInscricao)
         {
             Console.WriteLine();
@@ -123,26 +135,31 @@ namespace GestorEventos.Inscricoes
             Console.WriteLine(string.Format("Estado: {0}", dadosInscricao.Estado));
         }
 
+        // Solicita a confirmacao do cancelamento de uma inscricao
         public void PedirConfirmacaoCancelamento()
         {
             Console.Write("Confirma o cancelamento da inscricao? (s/n): ");
         }
 
+        // Exibe o resultado de uma operacao generica, mostrando a mensagem fornecida
         public void MostrarResultadoOperacao(string mensagem)
         {
             Console.WriteLine(mensagem);
         }
 
+        // Exibe uma mensagem de erro indicando que nao existem vagas suficientes ou que os dados introduzidos sao invalidos
         public void MostrarErroSemVagas()
         {
             Console.WriteLine("Nao existem vagas suficientes ou os dados introduzidos sao invalidos.");
         }
 
+        // Exibe uma mensagem de erro indicando que a inscricao selecionada nao existe ou que a operacao nao pode ser realizada
         public void MostrarErroMenu(string mensagem)
         {
             Console.WriteLine(string.Format("Erro no menu de inscricoes: {0}", mensagem));
         }
 
+        // Exibe uma mensagem de encerramento da operacao, indicando que o utilizador sera redirecionado para o menu principal
         public void FinalizarOperacaoMenu()
         {
             Console.WriteLine();
