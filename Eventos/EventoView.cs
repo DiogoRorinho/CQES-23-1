@@ -7,10 +7,10 @@ namespace GestorEventos.Eventos {
         public void MostrarMenuEventos() {
             Console.WriteLine();
             Console.WriteLine("=== Menu eventos ===");
-            Console.WriteLine("1 - Criar evento (Em desenvolvimento)");
-            Console.WriteLine("2 - Alterar evento (Em desenvolvimento)");
-            Console.WriteLine("3 - Cancelar evento (Em desenvolvimento)");
-            Console.WriteLine("4 - Listar eventos (Em desenvolvimento)");
+            Console.WriteLine("1 - Criar evento");
+            Console.WriteLine("2 - Alterar evento");
+            Console.WriteLine("3 - Cancelar evento");
+            Console.WriteLine("4 - Listar eventos");
             Console.WriteLine("0 - Regressar ao menu principal");
             Console.Write("Escolha uma opcao: ");
         }
@@ -37,11 +37,11 @@ namespace GestorEventos.Eventos {
         }
 
         public void SolicitarIdEventoAlteracao() {
-            Console.Write("Indique o ID do evento a alterar: ");
+            Console.Write("Indique o ID do evento a alterar [0 para cancelar]: "); // Editado para permitir cancelar a operação de alteração.
         }
 
         public void SolicitarIdEventoCancelamento() {
-            Console.Write("Indique o ID do evento a cancelar: ");
+            Console.Write("Indique o ID do evento a cancelar [0 para cancelar]: "); // Editado para permitir cancelar a operação de cancelamento.
         }
 
         public void PedirConfirmacaoCancelamento() {

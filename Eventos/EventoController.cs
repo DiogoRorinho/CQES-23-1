@@ -80,10 +80,16 @@ namespace GestorEventos.Eventos {
             view.SolicitarIdEventoAlteracao();
 
             int idEvento;
-            if (!int.TryParse(LerEntrada(), out idEvento) || idEvento <= 0) {
+            if (!int.TryParse(LerEntrada(), out idEvento) || idEvento < 0) {
                 view.MostrarMensagem("ID de evento invalido.");
                 return;
             }
+
+            if (idEvento == 0)      // Alterado para permitir cancelar a operação de alteração.
+                {
+                    view.MostrarMensagem("Alteracao de evento cancelada.");
+                    return;
+                }
 
             Evento? evento = model.ObterEvento(idEvento);
             if (evento == null) {
@@ -104,10 +110,15 @@ namespace GestorEventos.Eventos {
             view.SolicitarIdEventoCancelamento();
 
             int idEvento;
-            if (!int.TryParse(LerEntrada(), out idEvento) || idEvento <= 0) {
+            if (!int.TryParse(LerEntrada(), out idEvento) || idEvento < 0) {
                 view.MostrarMensagem("ID de evento invalido.");
                 return;
             }
+            if (idEvento == 0)      // Alterado para permitir cancelar a operação de cancelamento.
+                {
+                    view.MostrarMensagem("Cancelamento de evento cancelado.");
+                    return;
+                }
 
             Evento? evento = model.ObterEvento(idEvento);
             if (evento == null) {
