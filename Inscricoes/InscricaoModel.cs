@@ -5,6 +5,7 @@ using System.IO;
 using System.Text;
 using GestorEventos.Dados;
 using GestorEventos.Partilhado;
+using GestorEventos.Partilhado.Servicos;
 using Microsoft.Data.Sqlite;
 using PdfSharp;
 using PdfSharp.Drawing;
@@ -16,12 +17,14 @@ namespace GestorEventos.Inscricoes
     {
         private readonly string connectionString;
         private readonly string pastaPdfs;
+        private readonly IAtualizadorEstados atualizadorEstados;
 
         // Construtor que inicializa as configuracoes necessarias para o modelo de inscricao
         public InscricaoModel()
         {
             connectionString = ConfiguracaoAplicacao.ObterConnectionString();
             pastaPdfs = ConfiguracaoAplicacao.ObterPastaPdfs();
+            atualizadorEstados = new AtualizadorEstadosService();
         }
 
         // Lista os eventos que possuem vagas disponiveis para inscricao
@@ -33,6 +36,7 @@ namespace GestorEventos.Inscricoes
         // Obtem a lista de eventos que ainda possuem vagas disponiveis, considerando as inscricoes ativas
         public List<Evento> ObterEventosComDisponibilidade()
         {
+            AtualizarEstados();
             List<Evento> eventos = new List<Evento>();
 
             using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
@@ -66,6 +70,7 @@ namespace GestorEventos.Inscricoes
         // Valida se existem vagas suficientes para realizar uma inscricao no evento indicado, considerando a quantidade desejada
         public bool ValidarDisponibilidade(int idEvento, int quantidade)
         {
+            AtualizarEstados();
             if (idEvento <= 0 || quantidade <= 0)
             {
                 return false;
@@ -86,6 +91,7 @@ namespace GestorEventos.Inscricoes
         // Cria uma nova inscricao para um evento, validando os dados e a disponibilidade, e gerando um bilhete em PDF
         public ResultadoCriacaoInscricao CriarInscricao(DadosInscricao dados)
         {
+            AtualizarEstados();
             if (!DadosInscricaoValidos(dados))
             {
                 return CriarResultado(false, "Dados de inscricao invalidos.", null);
@@ -104,6 +110,7 @@ namespace GestorEventos.Inscricoes
         // Valida os dados de inscricao, registra a inscricao no banco de dados e gera um bilhete em PDF para o participante
         public DocumentoPdf ValidarRegistarInscricaoEGerarBilhete(DadosInscricao dados)
         {
+            AtualizarEstados();
             if (!DadosInscricaoValidos(dados))
             {
                 throw new InvalidOperationException("Dados de inscricao invalidos.");
@@ -166,6 +173,7 @@ namespace GestorEventos.Inscricoes
         // Obtem a lista completa de inscricoes, incluindo detalhes como participante, evento e estado da inscricao
         public List<Inscricao> ObterListaInscricoes()
         {
+            AtualizarEstados();
             List<Inscricao> inscricoes = new List<Inscricao>();
 
             using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
@@ -194,6 +202,7 @@ namespace GestorEventos.Inscricoes
         // Obtem os detalhes completos de uma inscricao especifica, incluindo informacoes do participante e do evento associado, com base no ID da inscricao
         public Inscricao? ObterDadosInscricao(int idInscricao)
         {
+            AtualizarEstados();
             if (idInscricao <= 0)
             {
                 return null;
@@ -226,6 +235,7 @@ namespace GestorEventos.Inscricoes
         // Verifica se uma alteracao em uma inscricao possivel, validando os dados fornecidos e verificando a disponibilidade no evento de destino, considerando a quantidade desejada
         public bool VerificarSeAlteracaoEhPossivel(int idInscricao, DadosInscricao dados)
         {
+            AtualizarEstados();
             if (idInscricao <= 0 || !DadosInscricaoValidos(dados))
             {
                 return false;
@@ -256,6 +266,7 @@ namespace GestorEventos.Inscricoes
         // Valida os dados para atualizacao de uma inscricao, realiza a alteracao no banco de dados e gera um novo bilhete em PDF refletindo as mudancas realizadas
         public DocumentoPdf ValidarAtualizarInscricaoEGerarBilhete(int idInscricao, DadosInscricao dados)
         {
+            AtualizarEstados();
             if (!VerificarSeAlteracaoEhPossivel(idInscricao, dados))
             {
                 throw new InvalidOperationException("Nao foi possivel alterar a inscricao com os dados indicados.");
@@ -307,6 +318,7 @@ namespace GestorEventos.Inscricoes
         // Atualiza o estado de uma inscricao para um novo valor, permitindo a transicao para estados como "cancelada" ou "cancelada_por_evento", e registrando a data de cancelamento quando aplicavel
         public void AtualizarEstadoInscricao(int idInscricao, string estado)
         {
+            AtualizarEstados();
             if (idInscricao <= 0 || string.IsNullOrWhiteSpace(estado))
             {
                 return;
@@ -335,6 +347,7 @@ namespace GestorEventos.Inscricoes
         // Obtem a lista de inscricoes ativas que estao associadas a um evento especifico, permitindo identificar os participantes afetados por alteracoes ou cancelamentos do evento
         public List<Inscricao> ObterInscritosAfetados(int idEvento)
         {
+            AtualizarEstados();
             List<Inscricao> resultados = new List<Inscricao>();
 
             if (idEvento <= 0)
@@ -371,6 +384,7 @@ namespace GestorEventos.Inscricoes
         // Gera um comprovativo de cancelamento para uma inscricao especifica, criando um documento PDF que detalha as informacoes do cancelamento e do evento associado
         public DocumentoPdf GerarComprovativoCancelamento(int idInscricao)
         {
+            AtualizarEstados();
             Inscricao? inscricao = ObterInscricao(idInscricao);
             Evento? evento = inscricao == null ? null : ObterEvento(inscricao.IdEvento);
 
@@ -394,6 +408,11 @@ namespace GestorEventos.Inscricoes
             return pastaPdfs;
         }
 
+        private void AtualizarEstados()
+        {
+            atualizadorEstados.AtualizarEstados();
+        }
+        
         // Cria um resultado de criacao de inscricao, encapsulando o sucesso da operacao, uma mensagem descritiva e um possivel documento PDF gerado como bilhete
         private ResultadoCriacaoInscricao CriarResultado(bool sucesso, string mensagem, DocumentoPdf? bilhetePdf)
         {

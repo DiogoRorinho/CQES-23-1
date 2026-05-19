@@ -1,40 +1,3 @@
-/*
-ALTERACOES REALIZADAS NOS MODULOS DE RELATORIOS E MODELOS
-
-1. A classe Inscricao passou a incluir os campos NomeParticipante, IdadeParticipante e Quantidade.
-   Motivo: O modelo Inscricao nao refletia a estrutura real da tabela "inscricoes" na base de dados, o que causava erros ao tentar usar o campo Quantidade nos relatorios.
-   Solucao: Foi alinhada a classe Inscricao com os dados existentes em SQLite, mantendo Quantidade na entidade usada pelos relatorios.
-
-2. O RelatorioModel passou a importar o namespace GestorEventos.Dados.
-   Motivo: O codigo usava BaseDados.CriarLigacaoAberta(), mas o compilador nao encontrava a classe BaseDados no contexto atual.
-   Solucao: Foi adicionado o using GestorEventos.Dados para permitir o acesso direto a BaseDados.
-
-3. O RelatorioModel passou a ler os campos nome_participante, idade_participante e quantidade na query das inscricoes.
-   Motivo: O relatorio estava a ler apenas parte da informacao da inscricao, ignorando dados que ja existiam na base de dados e que eram necessarios para os calculos e para o detalhe apresentado.
-   Solucao: A query SQL e o mapeamento para a classe Inscricao foram atualizados para incluir todos os campos relevantes.
-
-4. O total de inscritos no relatorio por evento deixou de usar apenas inscricoes.Count e passou a somar Quantidade.
-   Motivo: Uma inscricao pode representar varias vagas/lugares, pelo que contar apenas o numero de registos produzia valores incorretos.
-   Solucao: Foi criado um metodo para somar a Quantidade de todas as inscricoes do evento.
-
-5. O relatorio de ocupacao passou a somar Quantidade apenas nas inscricoes com estado "ativa".
-   Motivo: A ocupacao estava a ser calculada pelo numero de registos, em vez do numero real de vagas ocupadas.
-   Solucao: O calculo passou a acumular inscricao.Quantidade para refletir corretamente a ocupacao do evento.
-
-6. O relatorio de ocupacao passou a gerar efetivamente o ficheiro PDF antes de o apresentar na view.
-   Motivo: O sistema mostrava o nome e caminho do PDF, mas o metodo nao chamava a rotina de gravacao do ficheiro, deixando a pasta vazia.
-   Solucao: Foi gerado o conteudo do relatorio, criado o DocumentoPdf e chamada a funcao GerarFicheiroPdf antes de devolver o resultado.
-
-7. Foi ativado o suporte a fontes do Windows no arranque da aplicacao.
-   Motivo: O PDFsharp 6.2.4 em build Core nao resolve "Arial" automaticamente, gerando a excecao "No appropriate font found for family name 'Arial'".
-   Solucao: Foi definido GlobalFontSettings.UseWindowsFontsUnderWindows = true no arranque da aplicacao para permitir o uso de fontes Windows conhecidas.
-
-8. Resultado final:
-   O projeto voltou a compilar e os dois relatorios passaram a gerar PDFs corretamente.
-   Motivo: Era necessario garantir consistencia entre modelos, base de dados, calculos de relatorio e geracao de PDF.
-   Solucao: Foram corrigidos os modelos, queries, calculos, geracao de ficheiros PDF e configuracao de fontes.
-*/
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -42,6 +5,7 @@ using System.IO;
 using System.Text;
 using GestorEventos.Dados;
 using GestorEventos.Partilhado;
+using GestorEventos.Partilhado.Servicos;
 using Microsoft.Data.Sqlite;
 using PdfSharp;
 using PdfSharp.Drawing;
@@ -51,11 +15,13 @@ namespace GestorEventos.Relatorios {
     class RelatorioModel {
         private readonly string connectionString;
         private readonly string pastaPdfs;
+        private readonly IAtualizadorEstados atualizadorEstados;
         private DocumentoPdf? ultimoRelatorioGerado;
 
         public RelatorioModel() {
             connectionString = ConfiguracaoAplicacao.ObterConnectionString();
             pastaPdfs = ConfiguracaoAplicacao.ObterPastaPdfs();
+            atualizadorEstados = new AtualizadorEstadosService();
         }
 
         public List<Evento> ListarEventos() {
@@ -63,6 +29,7 @@ namespace GestorEventos.Relatorios {
         }
 
         public List<Evento> ObterListaEventos() {
+            AtualizarEstados();
             List<Evento> eventos = new List<Evento>();
 
             using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
@@ -85,10 +52,12 @@ namespace GestorEventos.Relatorios {
         }
 
         public bool EventoExiste(int idEvento) {
+            AtualizarEstados();
             return idEvento > 0 && ObterEventoPorId(idEvento) != null;
         }
 
         public DadosRelatorio ObterDadosRelatorioEGerarPdf(int idEvento) {
+            AtualizarEstados();
             const string titulo = "Listagem de inscritos por evento";
             Evento? evento = ObterEventoPorId(idEvento);
             string conteudo;
@@ -119,6 +88,7 @@ namespace GestorEventos.Relatorios {
         }
 
         public DadosRelatorio ObterDadosRelatorioOcupacaoEGerarPdf() {
+            AtualizarEstados();
             string conteudo = ConstruirConteudoOcupacao();
             ultimoRelatorioGerado = CriarDocumentoPdf("Eventos com ocupacao", "relatorio-ocupacao.pdf");
             GerarFicheiroPdf(ultimoRelatorioGerado, conteudo);
@@ -141,6 +111,10 @@ namespace GestorEventos.Relatorios {
             return pastaPdfs;
         }
 
+        private void AtualizarEstados() {
+            atualizadorEstados.AtualizarEstados();
+        }
+        
         private DocumentoPdf CriarDocumentoPdf(string titulo, string nomeFicheiro) {
             return new DocumentoPdf {
                 Titulo = titulo,

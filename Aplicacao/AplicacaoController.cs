@@ -26,6 +26,8 @@ namespace GestorEventos.Aplicacao {
             NotificacaoAnulacaoHandler notificacaoAnulacaoHandler = new NotificacaoAnulacaoHandler(inscricaoModel);
             eventoModel.EventoCancelado += notificacaoAnulacaoHandler.OnEventoCancelado;
 
+            eventoModel.AtualizarEstados();
+            
             eventoController = new EventoController(this, eventoView, eventoModel);
             inscricaoController = new InscricaoController(this, inscricaoView, inscricaoModel);
             relatorioController = new RelatorioController(this, relatorioView, relatorioModel);

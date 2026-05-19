@@ -3,10 +3,28 @@ using System.Collections.Generic;
 using System.Globalization;
 using GestorEventos.Dados;
 using GestorEventos.Partilhado;
+using GestorEventos.Partilhado.Servicos;
 using Microsoft.Data.Sqlite;
 
 namespace GestorEventos.Eventos {
-    class EventoModel {
+
+    class EventoModel : IAtualizadorEstados {
+        private readonly string connectionString;
+        private readonly IAtualizadorEstados atualizadorEstados;
+
+        public delegate void EventoCanceladoHandler(object sender, EventoCanceladoEventArgs e);
+        public event EventoCanceladoHandler? EventoCancelado;
+
+        public EventoModel() {
+            connectionString = ConfiguracaoAplicacao.ObterConnectionString();
+            atualizadorEstados = new AtualizadorEstadosService();
+        }
+
+        public void AtualizarEstados() {
+            atualizadorEstados.AtualizarEstados();
+        }
+    
+    /*class EventoModel {
         private readonly string connectionString;
 
         public delegate void EventoCanceladoHandler(object sender, EventoCanceladoEventArgs e);
@@ -14,7 +32,7 @@ namespace GestorEventos.Eventos {
 
         public EventoModel() {
             connectionString = ConfiguracaoAplicacao.ObterConnectionString();
-        }
+        }*/
 
         public ResultadoOperacaoEvento CriarEvento(DadosEvento dados) {
             return ValidarERegistarEvento(dados);
@@ -52,7 +70,7 @@ namespace GestorEventos.Eventos {
 
         public List<Evento> ObterListaEventos() {
             List<Evento> eventos = new List<Evento>();
-
+            AtualizarEstados();
             using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
             using SqliteCommand comando = ligacao.CreateCommand();
             comando.CommandText = @"
@@ -73,6 +91,7 @@ namespace GestorEventos.Eventos {
         }
 
         public Evento? ObterDadosEvento(int idEvento) {
+            AtualizarEstados();
             if (idEvento <= 0) {
                 return null;
             }
@@ -98,6 +117,7 @@ namespace GestorEventos.Eventos {
         }
 
         public ResultadoOperacaoEvento ValidarEAtualizarEvento(int idEvento, DadosEvento dados) {
+            AtualizarEstados();
             if (idEvento <= 0 || dados == null) {
                 return CriarResultado(false, "ID de evento invalido.");
             }
@@ -139,6 +159,7 @@ namespace GestorEventos.Eventos {
         }
 
         public ResultadoOperacaoEvento CancelarEvento(int idEvento) {
+            AtualizarEstados();
             Evento? eventoCancelado = ObterEvento(idEvento);
 
             if (eventoCancelado == null) {
