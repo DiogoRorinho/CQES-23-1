@@ -1,19 +1,21 @@
 using System;
-using System.Configuration;
 using System.IO;
+using System.Configuration;
+using Microsoft.Extensions.Configuration;
 
 namespace GestorEventos.Partilhado {
     static class ConfiguracaoAplicacao {
         private const string NomeConnectionString = "GestorEventosDb";
         private const string ChavePastaPdfs = "PastaPdfs";
+        private const string ChaveSeedDemoData = "SeedDemoData";
+        private static readonly Lazy<IConfigurationRoot> Configuracao = new Lazy<IConfigurationRoot>(CriarConfiguracao);
 
         public static string ObterConnectionString() {
-            ConnectionStringSettings config = ConfigurationManager.ConnectionStrings[NomeConnectionString];
-            return config != null ? config.ConnectionString : string.Empty;
+            return Configuracao.Value.GetConnectionString(NomeConnectionString) ?? string.Empty;
         }
 
         public static string ObterPastaPdfs() {
-            string pastaConfigurada = ConfigurationManager.AppSettings[ChavePastaPdfs];
+            string? pastaConfigurada = Configuracao.Value[ChavePastaPdfs];
 
             if (string.IsNullOrWhiteSpace(pastaConfigurada)) {
                 pastaConfigurada = "Pdfs";
@@ -24,6 +26,18 @@ namespace GestorEventos.Partilhado {
 
         public static string CombinarCaminhoPdf(string nomeFicheiro) {
             return Path.Combine(ObterPastaPdfs(), nomeFicheiro);
+        }
+
+        public static bool DeveSemearDadosDemo() {
+            string? valorConfigurado = Configuracao.Value[ChaveSeedDemoData];
+            return bool.TryParse(valorConfigurado, out bool deveSemear) && deveSemear;
+        }
+
+        private static IConfigurationRoot CriarConfiguracao() {
+            return new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                .Build();
         }
     }
 }

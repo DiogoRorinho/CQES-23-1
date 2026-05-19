@@ -1,19 +1,5 @@
-// NOTA DE VERIFICACAO:
-// Os fluxos de criacao, alteracao e cancelamento de eventos encontram-se
-// genericamente encaminhados, mas ficam sinalizados alguns pontos a alinhar
-// em iteracao futura:
-// - o input continua encapsulado na View, afastando-se da interpretacao mais
-//   rigorosa de Krasner & Pope seguida noutros ajustamentos do projeto;
-// - a validacao de input no Controller pode ser reforcada, de forma semelhante
-//   ao modulo de Inscricoes, nomeadamente nome/local nao vazios, data futura
-//   valida;;
-// - o Controller apresenta atualmente mensagens de sucesso apos chamar o Model,
-//   sem que este devolva ainda confirmacao explicita de sucesso/falha.
-// Estes pontos nao invalidam a estrutura geral implementada, mas deverao ser
-// alinhados quando a validacao completa e a integracao com SQLite estiverem
-// consolidadas.
-
 using System;
+using System.Globalization;
 using GestorEventos.Aplicacao;
 using GestorEventos.Partilhado;
 
@@ -36,7 +22,7 @@ namespace GestorEventos.Eventos {
             while (!regressarMenuPrincipal) {
                 try {
                     view.MostrarMenuEventos();
-                    SelecionarOpcao(view.LerEntrada());
+                    SelecionarOpcao(LerEntrada());
                 }
                 catch (Exception ex) {
                     view.MostrarErroMenu(ex.Message);
@@ -47,7 +33,7 @@ namespace GestorEventos.Eventos {
             }
         }
 
-        public void SelecionarOpcao(string opcao) {
+        public void SelecionarOpcao(string? opcao) {
             switch (NormalizarOpcao(opcao)) {
                 case "1":
                     CriarEvento();
@@ -83,30 +69,29 @@ namespace GestorEventos.Eventos {
         private void CriarEvento() {
             view.SolicitarDadosCriacao();
 
-            DadosEvento dados = RecolherDadosEvento();
-            if (dados == null) {
-                view.MostrarMensagem("Dados do evento invalidos.");
-                return;
-            }
+            DadosEvento dados = RecolherDadosCriacaoEvento();
 
-            model.CriarEvento(dados);
-            view.MostrarResultadoOperacao("Evento criado com sucesso.");
+            ResultadoOperacaoEvento resultado = model.CriarEvento(dados);
+            view.MostrarResultadoOperacao(resultado.Mensagem);
         }
 
-        // Deve permitir que o user altere só o campo pretendido, Enter para manter (e não precisa validar)
-        // e valida os campos alterados (Se for diminuicao de capacidade o Model deve verificar se existem
-        // inscricoes que ultrapassem a nova capacidade, e impedir a alteracao se for o caso, por exemplo).
         private void AlterarEvento() {
             view.MostrarListaEventos(model.ListarEventos());
             view.SolicitarIdEventoAlteracao();
 
             int idEvento;
-            if (!int.TryParse(view.LerEntrada(), out idEvento) || idEvento <= 0) {
+            if (!int.TryParse(LerEntrada(), out idEvento) || idEvento < 0) {
                 view.MostrarMensagem("ID de evento invalido.");
                 return;
             }
 
-            Evento evento = model.ObterEvento(idEvento);
+            if (idEvento == 0)      // Alterado para permitir cancelar a operação de alteração.
+                {
+                    view.MostrarMensagem("Alteracao de evento cancelada.");
+                    return;
+                }
+
+            Evento? evento = model.ObterEvento(idEvento);
             if (evento == null) {
                 view.MostrarMensagem("Evento nao encontrado.");
                 return;
@@ -114,14 +99,10 @@ namespace GestorEventos.Eventos {
 
             view.MostrarDadosParaEdicao(evento);
 
-            DadosEvento dados = RecolherDadosEvento();
-            if (dados == null) {
-                view.MostrarMensagem("Dados do evento invalidos.");
-                return;
-            }
+            DadosEvento dados = RecolherDadosAlteracaoEvento(evento);
 
-            model.AlterarEvento(idEvento, dados);                               // Nota: o Model ainda nao devolve confirmacao de sucesso/falha, mas o Controller assume sucesso se nao for lancada excecao.
-            view.MostrarResultadoOperacao("Evento alterado com sucesso.");      // Nota: a mensagem de sucesso e a sua apresentacao pelo Controller deverao ser alinhadas com o resultado real da operacao, quando a validacao completa e a integracao com SQLite estiverem consolidadas.
+            ResultadoOperacaoEvento resultado = model.AlterarEvento(idEvento, dados);
+            view.MostrarResultadoOperacao(resultado.Mensagem);
         }
 
         private void CancelarEvento() {
@@ -129,12 +110,17 @@ namespace GestorEventos.Eventos {
             view.SolicitarIdEventoCancelamento();
 
             int idEvento;
-            if (!int.TryParse(view.LerEntrada(), out idEvento) || idEvento <= 0) {      // A leitura do input deve ser feita pelo Controller
+            if (!int.TryParse(LerEntrada(), out idEvento) || idEvento < 0) {
                 view.MostrarMensagem("ID de evento invalido.");
                 return;
             }
+            if (idEvento == 0)      // Alterado para permitir cancelar a operação de cancelamento.
+                {
+                    view.MostrarMensagem("Cancelamento de evento cancelado.");
+                    return;
+                }
 
-            Evento evento = model.ObterEvento(idEvento);
+            Evento? evento = model.ObterEvento(idEvento);
             if (evento == null) {
                 view.MostrarMensagem("Evento nao encontrado.");
                 return;
@@ -143,48 +129,141 @@ namespace GestorEventos.Eventos {
             view.MostrarDadosParaEdicao(evento);
             view.PedirConfirmacaoCancelamento();
 
-            string confirmacao = NormalizarOpcao(view.LerEntrada());            // o INPUT deve ser lido pelo Controller.
+            string confirmacao = NormalizarOpcao(LerEntrada());
             if (confirmacao != "s" && confirmacao != "sim") {
                 view.MostrarMensagem("Cancelamento interrompido.");
                 return;
             }
 
-            model.CancelarEvento(idEvento);                                     // Nota: o Model ainda nao devolve confirmacao de sucesso/falha, mas o Controller assume sucesso se nao for lancada excecao.
-            view.MostrarResultadoOperacao("Evento cancelado com sucesso.");     // Nota: a mensagem de sucesso e a sua apresentacao pelo Controller deverao ser alinhadas com o resultado real da operacao, quando a validacao completa e a integracao com SQLite estiverem consolidadas.
+            ResultadoOperacaoEvento resultado = model.CancelarEvento(idEvento);
+            view.MostrarResultadoOperacao(resultado.Mensagem);
         }
 
         private void ListarEventos() {
             view.MostrarListaEventos(model.ListarEventos());
         }
 
-        private DadosEvento RecolherDadosEvento() {
-            view.SolicitarNome();
-            string nome = view.LerEntrada();            // Acrescentar validacao de nome como texto nao vazio. e a leitura do input deve ser feita pelo Controller
-
-            view.SolicitarLocal();
-            string local = view.LerEntrada();           // Acrescentar validacao de local como texto nao vazio. e a leitura do input deve ser feita pelo Controller
-
-            view.SolicitarData();
-            DateTime data;
-            if (!DateTime.TryParse(view.LerEntrada(), out data)) {  // Acrescentar condição de data futura, e a leitura do input deve ser feita pelo Controller
-                return null;
-            }
-
-            view.SolicitarCapacidade();
-            int capacidade;
-            if (!int.TryParse(view.LerEntrada(), out capacidade) || capacidade <= 0) {  // A leitura do input deve ser feita pelo Controller//
-                return null;
-            }
-
+        private DadosEvento RecolherDadosCriacaoEvento() {
             return new DadosEvento {
-                Nome = nome,
-                Local = local,
-                Data = data,
-                Capacidade = capacidade
+                Nome = LerTextoObrigatorio(view.SolicitarNome),
+                Local = LerTextoObrigatorio(view.SolicitarLocal),
+                Data = LerDataFuturaObrigatoria(view.SolicitarData),
+                Capacidade = LerInteiroPositivoObrigatorio(view.SolicitarCapacidade)
             };
         }
 
-        private string NormalizarOpcao(string opcao) {
+        private DadosEvento RecolherDadosAlteracaoEvento(Evento evento) {
+            return new DadosEvento {
+                Nome = LerTextoAlteravel(view.SolicitarNome, evento.Nome),
+                Local = LerTextoAlteravel(view.SolicitarLocal, evento.Local),
+                Data = LerDataFuturaAlteravel(view.SolicitarData, evento.Data),
+                Capacidade = LerInteiroPositivoAlteravel(view.SolicitarCapacidade, evento.Capacidade)
+            };
+        }
+
+        private string LerTextoObrigatorio(Action solicitarCampo) {
+            while (true) {
+                solicitarCampo();
+                string valor = LerEntrada();
+
+                if (!string.IsNullOrWhiteSpace(valor)) {
+                    return valor.Trim();
+                }
+
+                view.MostrarMensagem("O valor introduzido nao pode estar vazio.");
+            }
+        }
+
+        private string LerTextoAlteravel(Action solicitarCampo, string valorAtual) {
+            solicitarCampo();
+            string valor = LerEntrada();
+
+            if (string.IsNullOrWhiteSpace(valor)) {
+                return valorAtual;
+            }
+
+            return valor.Trim();
+        }
+
+        private DateTime LerDataFuturaObrigatoria(Action solicitarCampo) {
+            while (true) {
+                solicitarCampo();
+
+                if (TentarLerDataFutura(LerEntrada(), out DateTime data)) {
+                    return data;
+                }
+
+                view.MostrarMensagem("Introduza uma data futura no formato dd/MM/yyyy.");
+            }
+        }
+
+        private DateTime LerDataFuturaAlteravel(Action solicitarCampo, DateTime valorAtual) {
+            while (true) {
+                solicitarCampo();
+                string entrada = LerEntrada();
+
+                if (string.IsNullOrWhiteSpace(entrada)) {
+                    return valorAtual;
+                }
+
+                if (TentarLerDataFutura(entrada, out DateTime data)) {
+                    return data;
+                }
+
+                view.MostrarMensagem("Introduza uma data futura no formato dd/MM/yyyy.");
+            }
+        }
+
+        private int LerInteiroPositivoObrigatorio(Action solicitarCampo) {
+            while (true) {
+                solicitarCampo();
+
+                if (int.TryParse(LerEntrada(), out int valor) && valor > 0) {
+                    return valor;
+                }
+
+                view.MostrarMensagem("Introduza um numero inteiro positivo.");
+            }
+        }
+
+        private int LerInteiroPositivoAlteravel(Action solicitarCampo, int valorAtual) {
+            while (true) {
+                solicitarCampo();
+                string entrada = LerEntrada();
+
+                if (string.IsNullOrWhiteSpace(entrada)) {
+                    return valorAtual;
+                }
+
+                if (int.TryParse(entrada, out int valor) && valor > 0) {
+                    return valor;
+                }
+
+                view.MostrarMensagem("Introduza um numero inteiro positivo.");
+            }
+        }
+
+        private bool TentarLerDataFutura(string entrada, out DateTime data) {
+            bool dataValida = DateTime.TryParseExact(
+                entrada.Trim(),
+                "dd/MM/yyyy",
+                CultureInfo.GetCultureInfo("pt-PT"),
+                DateTimeStyles.None,
+                out data);
+
+            if (!dataValida) {
+                return false;
+            }
+
+            data = data.Date;
+            return data > DateTime.Today;
+        }
+
+        private string LerEntrada() {
+            return Console.ReadLine() ?? string.Empty;
+        }
+
+        private string NormalizarOpcao(string? opcao) {
             if (string.IsNullOrWhiteSpace(opcao)) {
                 return string.Empty;
             }

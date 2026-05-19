@@ -88,6 +88,8 @@ AppPackages/
 
 # Others
 sql/
+!Dados/Sql/
+!Dados/Sql/*.sql
 *.Cache
 ClientBin/
 [Ss]tyle[Cc]op.*
@@ -112,6 +114,14 @@ UpgradeLog*.htm
 # SQL Server files
 App_Data/*.mdf
 App_Data/*.ldf
+
+# SQLite local files
+*.db
+*.db-shm
+*.db-wal
+
+# Generated application files
+Pdfs/
 
 # =========================
 # Windows detritus

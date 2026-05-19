@@ -7,16 +7,12 @@ namespace GestorEventos.Eventos {
         public void MostrarMenuEventos() {
             Console.WriteLine();
             Console.WriteLine("=== Menu eventos ===");
-            Console.WriteLine("1 - Criar evento (Em desenvolvimento)");
-            Console.WriteLine("2 - Alterar evento (Em desenvolvimento)");
-            Console.WriteLine("3 - Cancelar evento (Em desenvolvimento)");
-            Console.WriteLine("4 - Listar eventos (Em desenvolvimento)");
+            Console.WriteLine("1 - Criar evento");
+            Console.WriteLine("2 - Alterar evento");
+            Console.WriteLine("3 - Cancelar evento");
+            Console.WriteLine("4 - Listar eventos");
             Console.WriteLine("0 - Regressar ao menu principal");
             Console.Write("Escolha uma opcao: ");
-        }
-
-        public string LerEntrada() {                        // Este método deve passar ao Controller (input)
-            return Console.ReadLine() ?? string.Empty;
         }
 
         public void SolicitarDadosCriacao() {
@@ -41,11 +37,11 @@ namespace GestorEventos.Eventos {
         }
 
         public void SolicitarIdEventoAlteracao() {
-            Console.Write("Indique o ID do evento a alterar: ");
+            Console.Write("Indique o ID do evento a alterar [0 para cancelar]: "); // Editado para permitir cancelar a operação de alteração.
         }
 
         public void SolicitarIdEventoCancelamento() {
-            Console.Write("Indique o ID do evento a cancelar: ");
+            Console.Write("Indique o ID do evento a cancelar [0 para cancelar]: "); // Editado para permitir cancelar a operação de cancelamento.
         }
 
         public void PedirConfirmacaoCancelamento() {
@@ -74,7 +70,14 @@ namespace GestorEventos.Eventos {
 
         public void MostrarDadosParaEdicao(Evento dadosEvento) {
             Console.WriteLine();
-            Console.WriteLine(string.Format("Evento selecionado: {0}", dadosEvento.Nome));
+            Console.WriteLine(string.Format(
+                "Evento selecionado: {0} - {1} | {2:dd/MM/yyyy} | {3} | capacidade: {4}",
+                dadosEvento.Id,
+                dadosEvento.Nome,
+                dadosEvento.Data,
+                dadosEvento.Local,
+                dadosEvento.Capacidade));
+            Console.WriteLine("Prima Enter para manter o valor atual.");
         }
 
         public void MostrarResultadoOperacao(string mensagem) {

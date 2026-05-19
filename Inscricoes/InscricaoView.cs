@@ -2,86 +2,167 @@ using System;
 using System.Collections.Generic;
 using GestorEventos.Partilhado;
 
-namespace GestorEventos.Inscricoes {
-    class InscricaoView {
-        // O método MostrarMenuInscricoes apresenta as opções disponíveis para o usuário no módulo de inscrições.
-        public void MostrarMenuInscricoes() {
+namespace GestorEventos.Inscricoes
+{
+ 
+    class InscricaoView
+    {
+        // Exibe o menu de inscricoes e solicita a opcao do utilizador
+        public void MostrarMenuInscricoes()
+        {
             Console.WriteLine();
             Console.WriteLine("===== Menu Inscricoes =====");
-            Console.WriteLine("1 - Criar inscricao (Em desenvolvimento)");
-            Console.WriteLine("2 - Alterar inscricao (A desenvolver)");
-            Console.WriteLine("3 - Cancelar inscricao (A desenvolver)");
+            Console.WriteLine("1 - Criar inscricao");
+            Console.WriteLine("2 - Alterar inscricao");
+            Console.WriteLine("3 - Cancelar inscricao");
+            Console.WriteLine("4 - Listar inscricoes");
             Console.WriteLine("0 - Regressar ao menu principal");
             Console.Write("Opcao: ");
         }
-        
-        // O método MostrarListaEventos exibe a lista de eventos com vagas disponíveis.
-        public void MostrarListaEventos(List<Evento> listaEventosComVagas) {
+
+        // Exibe a lista de eventos com vagas disponiveis
+        public void MostrarListaEventos(List<Evento> listaEventosComVagas)
+        {
+            Console.WriteLine();
             Console.WriteLine("Eventos com vagas disponiveis:");
-            foreach (Evento evento in listaEventosComVagas) {
-                Console.WriteLine(string.Format("{0} - {1}", evento.Id, evento.Nome));
+
+            if (listaEventosComVagas == null || listaEventosComVagas.Count == 0)
+            {
+                Console.WriteLine("Nao existem eventos com vagas disponiveis.");
+                return;
+            }
+
+            foreach (Evento evento in listaEventosComVagas)
+            {
+                Console.WriteLine(string.Format(
+                    "{0} - {1} | {2:dd/MM/yyyy} | {3} | capacidade: {4}",
+                    evento.Id,
+                    evento.Nome,
+                    evento.Data,
+                    evento.Local,
+                    evento.Capacidade));
             }
         }
 
-        // O método SolicitarIdEvento solicita ao usuário que informe o ID do evento para o qual deseja criar ou alterar uma inscrição.
+        // Solicita o ID do evento para criar ou alterar uma inscricao
         public void SolicitarIdEvento()
         {
-            Console.Write("Indique o ID do evento: ");
+            Console.Write("Indique o ID do evento ou [0 para cancelar]: ");
         }
 
-        // O método MostrarErroMenu exibe uma mensagem de erro relacionada ao menu, como uma opção inválida ou um erro de entrada.
+        // Solicita um campo de texto (nome, email, etc.) com base no pedido fornecido
         public void SolicitarCampoTexto(string pedido)
         {
             Console.Write(pedido);
         }
 
-        // O método SolicitarDadosCriacao é um cabeçalho para indicar o início do processo de criação de uma inscrição, onde o usuário será solicitado a fornecer os dados necessários para criar a inscrição.
-        public void SolicitarDadosCriacao() {
+        public void SolicitarDadosCriacao()
+        {
+            Console.WriteLine();
             Console.WriteLine("Criacao de inscricao.");
         }
 
-        // O método MostrarMensagem é um método genérico para exibir qualquer mensagem que o Controller queira comunicar ao usuário.
-        public void MostrarMensagem(string mensagem) {
+        // Solicita os dados para edicao de uma inscricao, indicando que o utilizador pode manter o valor atual
+        public void SolicitarDadosEdicao()
+        {
+            Console.WriteLine();
+            Console.WriteLine("Alteracao de inscricao.");
+            Console.WriteLine("Prima Enter para manter o valor atual.");
+        }
+
+        // Solicita o ID da inscricao para alterar ou cancelar
+        public void SolicitarIdInscricaoAlteracao()
+        {
+            Console.Write("Indique o ID da inscricao a alterar: ");
+        }
+
+        // Solicita o ID da inscricao para cancelar
+        public void SolicitarIdInscricaoCancelamento()
+        {
+            Console.Write("Indique o ID da inscricao a cancelar: ");
+        }
+
+        // Exibe uma mensagem gen�rica
+        public void MostrarMensagem(string mensagem)
+        {
             Console.WriteLine(mensagem);
         }
 
-        // O método MostrarResultadoOperacaoEBilhete exibe uma mensagem de resultado da operação e o nome do arquivo do bilhete gerado em formato PDF.
-        public void MostrarResultadoOperacaoEBilhete(string mensagem, DocumentoPdf bilhetePdf) {
+        // Exibe o resultado de uma operacao que gera um bilhete PDF, mostrando a mensagem e os detalhes do documento gerado
+        public void MostrarResultadoOperacaoEBilhete(string mensagem, DocumentoPdf bilhetePdf)
+        {
             Console.WriteLine(mensagem);
-            Console.WriteLine(string.Format("Bilhete gerado: {0}", bilhetePdf.NomeFicheiro));
+            Console.WriteLine(string.Format("Documento gerado: {0}", bilhetePdf.NomeFicheiro));
+            Console.WriteLine(string.Format("Caminho: {0}", bilhetePdf.CaminhoFicheiro));
         }
 
-
-        // ---------------------------   A IMPLEMENTAR POSTERIORMENTE   ---------------------------
-
-
-        // O método MostrarListaInscricoes exibe a lista de inscrições existentes, incluindo o ID da inscrição, o ID do evento associado e o estado da inscrição.
-        public void MostrarListaInscricoes(List<Inscricao> listaInscricoes) {
+        // Exibe a lista de inscricoes, mostrando os detalhes de cada inscricao
+        public void MostrarListaInscricoes(List<Inscricao> listaInscricoes)
+        {
+            Console.WriteLine();
             Console.WriteLine("Lista de inscricoes:");
-            foreach (Inscricao inscricao in listaInscricoes) {
-                Console.WriteLine(string.Format("{0} - Evento {1} - {2}", inscricao.Id, inscricao.IdEvento, inscricao.Estado));
+
+            if (listaInscricoes == null || listaInscricoes.Count == 0)
+            {
+                Console.WriteLine("Nao existem inscricoes registadas.");
+                return;
+            }
+
+            foreach (Inscricao inscricao in listaInscricoes)
+            {
+                Console.WriteLine(string.Format(
+                    "{0} - Evento {1} | {2} | {3} | idade: {4} | qtd: {5} | estado: {6}",
+                    inscricao.Id,
+                    inscricao.IdEvento,
+                    inscricao.NomeParticipante,
+                    inscricao.EmailParticipante,
+                    inscricao.IdadeParticipante,
+                    inscricao.Quantidade,
+                    inscricao.Estado));
             }
         }
 
-        // O método MostrarDadosParaEdicao exibe os dados de uma inscrição selecionada para edição, permitindo que o usuário veja as informações atuais antes de fazer alterações.
-        public void MostrarDadosParaEdicao(Inscricao dadosInscricao) {
+        // Exibe os detalhes de uma inscricao para edicao, mostrando os dados atuais da inscricao
+        public void MostrarDadosParaEdicao(Inscricao dadosInscricao)
+        {
+            Console.WriteLine();
             Console.WriteLine(string.Format("Inscricao selecionada: {0}", dadosInscricao.Id));
+            Console.WriteLine(string.Format("Evento: {0}", dadosInscricao.IdEvento));
+            Console.WriteLine(string.Format("Nome: {0}", dadosInscricao.NomeParticipante));
+            Console.WriteLine(string.Format("Email: {0}", dadosInscricao.EmailParticipante));
+            Console.WriteLine(string.Format("Idade: {0}", dadosInscricao.IdadeParticipante));
+            Console.WriteLine(string.Format("Quantidade: {0}", dadosInscricao.Quantidade));
+            Console.WriteLine(string.Format("Estado: {0}", dadosInscricao.Estado));
         }
 
-        // O método SolicitarDadosEdicao pode ser expandido para solicitar os dados necessários para editar uma inscrição, como o novo estado ou a quantidade de vagas.
-        public void PedirConfirmacaoCancelamento() {
-            Console.WriteLine("Confirma o cancelamento da inscricao?");
+        // Solicita a confirmacao do cancelamento de uma inscricao
+        public void PedirConfirmacaoCancelamento()
+        {
+            Console.Write("Confirma o cancelamento da inscricao? (s/n): ");
         }
 
-        // O método MostrarResultadoOperacao exibe uma mensagem de resultado da operação realizada, como sucesso ou falha.
-        public void MostrarResultadoOperacao(string mensagem) {
+        // Exibe o resultado de uma operacao generica, mostrando a mensagem fornecida
+        public void MostrarResultadoOperacao(string mensagem)
+        {
             Console.WriteLine(mensagem);
         }
 
-        // O método MostrarErroMenu exibe uma mensagem de erro relacionada ao menu, como uma opção inválida ou um erro de entrada.
-        public void MostrarErroSemVagas() {
-            Console.WriteLine("Nao existem vagas suficientes.");
+        // Exibe uma mensagem de erro indicando que nao existem vagas suficientes ou que os dados introduzidos sao invalidos
+        public void MostrarErroSemVagas()
+        {
+            Console.WriteLine("Nao existem vagas suficientes ou os dados introduzidos sao invalidos.");
         }
-        
+
+        // Exibe uma mensagem de erro indicando que a inscricao selecionada nao existe ou que a operacao nao pode ser realizada
+        public void MostrarErroMenu(string mensagem)
+        {
+            Console.WriteLine(string.Format("Erro no menu de inscricoes: {0}", mensagem));
+        }
+
+        // Exibe uma mensagem de encerramento da operacao, indicando que o utilizador sera redirecionado para o menu principal
+        public void FinalizarOperacaoMenu()
+        {
+            Console.WriteLine();
+        }
     }
 }

@@ -32,7 +32,7 @@ namespace GestorEventos.Relatorios {
             }
         }
 
-        public void SelecionarOpcao(string opcao) {
+        public void SelecionarOpcao(string? opcao) {
             switch (NormalizarOpcao(opcao)) {
                 case "1":                //case "Listagem de inscritos por evento"
                     ApresentarRelatorioInscritosPorEvento();
@@ -66,6 +66,11 @@ namespace GestorEventos.Relatorios {
                 return;
             }
 
+            if (!model.EventoExiste(idEvento)) {
+                view.MostrarMensagem("Evento nao encontrado.");
+                return;
+            }
+
             SelecionarEvento(idEvento);
         }
 
@@ -85,7 +90,7 @@ namespace GestorEventos.Relatorios {
             aplicacaoController.RegressarMenuPrincipal();
         }
 
-        private string NormalizarOpcao(string opcao) {
+        private string NormalizarOpcao(string? opcao) {
             if (string.IsNullOrWhiteSpace(opcao)) {
                 return string.Empty;
             }

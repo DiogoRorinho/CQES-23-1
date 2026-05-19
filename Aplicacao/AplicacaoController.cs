@@ -26,6 +26,8 @@ namespace GestorEventos.Aplicacao {
             NotificacaoAnulacaoHandler notificacaoAnulacaoHandler = new NotificacaoAnulacaoHandler(inscricaoModel);
             eventoModel.EventoCancelado += notificacaoAnulacaoHandler.OnEventoCancelado;
 
+            eventoModel.AtualizarEstados();
+            
             eventoController = new EventoController(this, eventoView, eventoModel);
             inscricaoController = new InscricaoController(this, inscricaoView, inscricaoModel);
             relatorioController = new RelatorioController(this, relatorioView, relatorioModel);
@@ -49,7 +51,7 @@ namespace GestorEventos.Aplicacao {
             }
         }
 
-        public void SelecionarOpcao(string opcao) {
+        public void SelecionarOpcao(string? opcao) {
             switch (NormalizarOpcao(opcao)) {
                 case "1":                // case "Eventos"
                     eventoController.MostrarMenuModulo();
@@ -78,7 +80,7 @@ namespace GestorEventos.Aplicacao {
             menuPrincipalView.ApresentarMensagemEncerramento();
         }
 
-        private string NormalizarOpcao(string opcao) {
+        private string NormalizarOpcao(string? opcao) {
             if (string.IsNullOrWhiteSpace(opcao)) {
                 return string.Empty;
             }

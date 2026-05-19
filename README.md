@@ -1,99 +1,113 @@
 # Gestor de Eventos CQES 23+1
 
-Aplicação de consola em C# para gestão de eventos, inscrições e relatórios, organizada num estilo MVC simples. O projecto está preparado para correr em **.NET Framework 4.8** e usa uma configuração baseada em `App.config` para a ligação a base de dados e para a pasta de geração de PDFs.
+Aplicação de consola para apoiar a gestão de eventos, inscrições e relatórios. O objetivo é permitir que um utilizador crie e consulte eventos, registe participantes, acompanhe inscrições e obtenha informação resumida sobre a ocupação dos eventos.
 
-## Visão geral
+A aplicação é desenvolvida em C# e corre em **.NET 10**.
 
-O programa inicia pela classe `Program` e encaminha a execução para o `AplicacaoController`, que mostra o menu principal e distribui o fluxo para os módulos do sistema:
+## O que a aplicação permite fazer
 
-- **Eventos**: criação, alteração, cancelamento e listagem de eventos.
-- **Inscricoes**: criação, alteração e cancelamento de inscrições.
-- **Relatorios**: relatórios de inscritos por evento e eventos com ocupação.
+- Consultar um menu principal com acesso às áreas de Eventos, Inscrições e Relatórios.
+- Criar, alterar, cancelar e listar eventos.
+- Criar inscrições para eventos disponíveis.
+- Validar dados introduzidos pelo utilizador, como campos obrigatórios e números positivos.
+- Simular a criação de bilhetes em PDF para inscrições.
+- Listar inscritos por evento.
+- Consultar a ocupação dos eventos.
+- Tratar o cancelamento de eventos, identificando inscrições afetadas.
 
-O projecto está estruturado por responsabilidades:
+## Como funciona
 
-- `Aplicacao/` - arranque da aplicação e menu principal.
-- `Eventos/` - lógica, vistas e eventos de cancelamento.
-- `Inscricoes/` - gestão de inscrições e bilhetes.
-- `Relatorios/` - geração e apresentação de relatórios.
-- `Partilhado/` - modelos e configuração comum.
+Ao iniciar a aplicação, é apresentado um menu principal na consola. A partir desse menu, o utilizador pode escolher a área onde pretende trabalhar:
 
-## Estrutura do projecto
+- **Eventos**: gestão dos eventos disponíveis.
+- **Inscrições**: registo de participantes nos eventos.
+- **Relatórios**: consulta de informação sobre inscritos e ocupação.
+- **Terminar**: encerra a aplicação.
 
-- `Program.cs` - ponto de entrada da aplicação.
-- `Aplicacao/AplicacaoController.cs` - controla o menu principal e a navegação entre módulos.
-- `Aplicacao/MenuPrincipalView.cs` - mensagens do menu principal.
-- `Eventos/EventoController.cs` - fluxo do módulo de eventos.
-- `Eventos/EventoModel.cs` - operações de eventos e disparo de cancelamento.
-- `Eventos/EventoView.cs` - interface de consola do módulo de eventos.
-- `Eventos/EventoCanceladoEventArgs.cs` - dados do evento cancelado.
-- `Eventos/NotificacaoAnulacaoHandler.cs` - trata o cancelamento e a notificação das inscrições afetadas.
-- `Inscricoes/InscricaoController.cs` - fluxo do módulo de inscrições.
-- `Inscricoes/InscricaoModel.cs` - operações de inscrições, bilhetes e cancelamentos associados a eventos.
-- `Inscricoes/InscricaoView.cs` - interface de consola do módulo de inscrições.
-- `Relatorios/RelatorioController.cs` - fluxo do módulo de relatórios.
-- `Relatorios/RelatorioModel.cs` - dados e geração de relatórios.
-- `Relatorios/RelatorioView.cs` - interface de consola do módulo de relatórios.
-- `Partilhado/ConfiguracaoAplicacao.cs` - leitura de configuração e caminhos de ficheiros.
-- `Partilhado/Modelos.cs` - modelos partilhados do domínio.
+Quando um evento é cancelado, a aplicação aciona o processo associado ao cancelamento e identifica as inscrições relacionadas com esse evento.
 
-## Funcionalidades identificadas
+## Estado atual
 
-Com base no código atual, o projecto suporta:
+A aplicação já tem os principais menus e fluxos encaminhados e inclui um primeiro draft de persistência em SQLite.
 
-- menu principal para navegar entre módulos;
-- gestão de eventos com criação, edição e cancelamento;
-- gestão de inscrições com validação de disponibilidade;
-- geração de referência para bilhetes em PDF;
-- relatórios de inscritos por evento e de ocupação;
-- tratamento do cancelamento de eventos com propagação para inscrições associadas.
+A base de dados é criada automaticamente no arranque da aplicação, usando os scripts SQL existentes na pasta `Dados/Sql/`. Quando a configuração `SeedDemoData` está ativa no ficheiro `appsettings.json`, a aplicação também insere dados de demonstração se a base de dados estiver vazia.
 
+Também a geração de PDFs e o envio de notificações estão preparados como intenção de funcionamento, mas ainda não geram documentos reais nem enviam mensagens reais.
+
+Funcionalidades ainda previstas:
+
+- aplicar validações completas às regras de negócio;
+- gerar PDFs reais para bilhetes e comprovativos;
+- enviar notificações reais aos participantes;
+- concluir os fluxos de alteração e cancelamento de inscrições.
 
 ## Requisitos
 
-- **Visual Studio 2019 ou superior ** com suporte para **.NET Framework 4.8**.
-- **.NET Framework 4.8 Developer Pack** instalado.
-- Acesso a um provider SQLite compatível, caso completes a implementação de persistência real.
+Para compilar e executar a aplicação é necessário ter instalado:
 
-## Como compilar no Visual Studio
+- **.NET 10 SDK**;
+- um editor de código ou IDE, como Visual Studio, Visual Studio Code ou JetBrains Rider.
 
-1. Abre o **Visual Studio**.
-2. Escolhe **File > Open > Project/Solution**.
-3. Seleciona o ficheiro `GestorEventos.csproj`.
-4. Se o Visual Studio pedir para instalar componentes do .NET Framework 4.8, aceita a instalação.
-5. Aguarda o carregamento do projecto.
-6. No menu superior, escolhe a configuração desejada:
-   - **Debug** para desenvolvimento;
-   - **Release** para uma compilação final.
-7. Compila com **Build > Build Solution**.
-8. Executa com **F5** ou **Ctrl+F5**.
+## Como executar
 
-Se quiseres abrir o executável gerado, o output por omissão fica em:
+Na pasta principal do projeto, executar:
 
-- `bin\Debug\`
-- `bin\Release\`
+```bash
+dotnet restore
+dotnet build
+dotnet run
+```
+
+Também é possível abrir a solução `CQES-23-1.sln` ou o projeto `GestorEventos.csproj` num editor compatível e executar a aplicação a partir daí.
 
 ## Configuração
 
-O ficheiro `App.config` define:
+O ficheiro `appsettings.json` guarda valores de configuração usados pela aplicação:
 
-- a connection string `GestorEventosDb`;
-- a pasta `Pdfs` para ficheiros gerados;
-- o runtime suportado: `.NETFramework,Version=v4.8`.
+```json
+{
+  "ConnectionStrings": {
+    "GestorEventosDb": "Data Source=gestoreventos.db"
+  },
+  "PastaPdfs": "Pdfs",
+  "SeedDemoData": true
+}
+```
 
-### Valores relevantes
+Estes valores indicam:
 
-- Base de dados: `Data Source=|DataDirectory|\gestoreventos.db;Version=3;`
-- Pasta de PDFs: `Pdfs`
+- o nome e localização previstos para a base de dados;
+- a pasta onde serão guardados os PDFs gerados.
+- se devem ser inseridos dados de demonstração quando a base de dados está vazia.
 
-## Observações sobre o estado atual
+## Base de dados SQLite
 
-- A aplicação está organizada como um esqueleto funcional, com várias operações ainda em implementação.
-- Os modelos e vistas usam `Console.WriteLine`, por isso a aplicação é de consola e não tem interface gráfica.
+A estrutura da base de dados está separada do código C#:
 
-## Fluxo de execução
+- `Dados/Sql/schema.sql` - cria as tabelas, relações, constraints e índices.
+- `Dados/Sql/seed-demo.sql` - insere dados de demonstração para a primeira execução.
 
-1. `Program.Main` cria o `AplicacaoController`.
-2. O controlador inicial mostra as mensagens de boas-vindas e o menu principal.
-3. O utilizador escolhe entre Eventos, Inscricoes, Relatorios ou Terminar.
-4. Cada módulo apresenta o seu menu e delega operações ao respetivo model/view.
+O schema inclui:
+
+- `eventos` - dados principais dos eventos, estado, capacidade e timestamps.
+- `inscricoes` - inscrições associadas a eventos através de foreign key.
+
+A aplicação usa soft-delete através do campo `estado`, por exemplo `ativo`, `cancelado`, `ativa`, `cancelada` e `cancelada_por_evento`. As operações principais usam SQLite através dos Models, mantendo a separação MVC.
+
+## Organização dos ficheiros
+
+O projeto está organizado por áreas:
+
+- `Aplicacao/` - arranque da aplicação e menu principal.
+- `Eventos/` - gestão de eventos e cancelamentos.
+- `Inscricoes/` - gestão de inscrições e bilhetes.
+- `Relatorios/` - consulta e apresentação de relatórios.
+- `Dados/` - inicialização da base de dados e scripts SQL.
+- `Partilhado/` - modelos e configuração comuns às várias áreas.
+
+Ficheiros principais:
+
+- `Program.cs` - ponto de entrada da aplicação.
+- `GestorEventos.csproj` - ficheiro do projeto .NET.
+- `appsettings.json` - ficheiro de configuração.
+- `CQES-23-1.sln` - solução que pode ser aberta no Visual Studio ou noutra IDE compatível.
