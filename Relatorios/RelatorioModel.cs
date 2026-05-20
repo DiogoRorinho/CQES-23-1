@@ -59,6 +59,7 @@ namespace GestorEventos.Relatorios {
         public DadosRelatorio ObterDadosRelatorioEGerarPdf(int idEvento) {
             AtualizarEstados();
             const string titulo = "Listagem de inscritos por evento";
+            DateTime dataGeracao = DateTime.Now;
             Evento? evento = ObterEventoPorId(idEvento);
             string conteudo;
 
@@ -68,11 +69,14 @@ namespace GestorEventos.Relatorios {
             }
             else {
                 List<Inscricao> inscricoes = ObterInscricoesPorEvento(idEvento);
-                conteudo = ConstruirConteudoInscritos(evento, inscricoes);
+                conteudo = ConstruirConteudoInscritos(evento, inscricoes, dataGeracao);
 
                 ultimoRelatorioGerado = CriarDocumentoPdf(
                     titulo,
-                    "relatorio-inscritos-evento-" + idEvento + ".pdf");
+                    string.Format(
+                        "relatorio-inscritos-evento-{0}-{1:yyyyMMdd-HHmmss}.pdf",
+                        idEvento,
+                        dataGeracao));
 
                 GerarFicheiroPdf(ultimoRelatorioGerado, conteudo);
             }
@@ -170,12 +174,14 @@ namespace GestorEventos.Relatorios {
             return inscricoes;
         }
 
-        private string ConstruirConteudoInscritos(Evento? evento, List<Inscricao> inscricoes) {
+        private string ConstruirConteudoInscritos(Evento? evento, List<Inscricao> inscricoes, DateTime dataGeracao) {
             if (evento == null) {
                 return "Evento nao encontrado.";
             }
 
             StringBuilder conteudo = new StringBuilder();
+            conteudo.AppendLine(string.Format("Gerado em {0:dd/MM/yyyy HH:mm}", dataGeracao));
+            conteudo.AppendLine();
             conteudo.AppendLine(string.Format("Evento: {0}", evento.Nome));
             conteudo.AppendLine(string.Format("Local: {0}", evento.Local));
             conteudo.AppendLine(string.Format("Data: {0:dd/MM/yyyy}", evento.Data));
@@ -187,12 +193,18 @@ namespace GestorEventos.Relatorios {
             }
 
             conteudo.AppendLine("Inscritos:");
+            conteudo.AppendLine(string.Format(
+                "{0,-13} | {1,-35} | {2,-10} | {3}",
+                "ID inscricao",
+                "Email participante",
+                "Estado",
+                "Quantidade"));
+            conteudo.AppendLine(new string('-', 85));
 
             foreach (Inscricao inscricao in inscricoes) {
                 conteudo.AppendLine(string.Format(
-                    "- #{0} | {1} | {2} | {3} | {4}",
+                    "{0,-13} | {1,-35} | {2,-10} | {3}",
                     inscricao.Id,
-                    inscricao.NomeParticipante,
                     inscricao.EmailParticipante,
                     inscricao.Estado,
                     inscricao.Quantidade));

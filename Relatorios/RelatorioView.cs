@@ -16,9 +16,18 @@ namespace GestorEventos.Relatorios {
         public void MostrarListaEventos(List<Evento> listaEventos) {
             Console.WriteLine();
             Console.WriteLine("Lista de eventos:");
+            Console.WriteLine(string.Format(
+                "{0,-5} {1,-30} {2,-12} {3,-20} {4,10}",
+                "ID",
+                "Nome",
+                "Data",
+                "Local",
+                "Capacidade"));
+            Console.WriteLine(new string('-', 83));
+
             foreach (Evento evento in listaEventos) {
                 Console.WriteLine(string.Format(
-                    "{0} - {1} | {2:dd/MM/yyyy} | {3} | capacidade: {4}",
+                    "{0,-5} {1,-30} {2,-12:dd/MM/yyyy} {3,-20} {4,10}",
                     evento.Id,
                     evento.Nome,
                     evento.Data,
@@ -28,7 +37,7 @@ namespace GestorEventos.Relatorios {
         }
 
         public void SolicitarIdEvento() {
-            Console.Write("Indique o ID do evento: ");
+            Console.Write("Indique o ID do evento (0 para sair): ");
         }
 
         public void ApresentarRelatorioEPdf(DadosRelatorio dadosRelatorio, DocumentoPdf relatorioPdf) {

@@ -57,12 +57,17 @@ namespace GestorEventos.Relatorios {
 
             int idEvento;
             if (!int.TryParse(Console.ReadLine(), out idEvento)) {
-                view.MostrarMensagem("ID de evento invalido.");
+                view.MostrarMensagem("Introduza um ID válido ou 0 para sair.");
                 return;
             }
 
-            if (idEvento <= 0) {
-                view.MostrarMensagem("ID de evento invalido.");
+            if (idEvento == 0) {
+                view.MostrarMensagem("Operacao cancelada.");
+                return;
+            }
+
+            if (idEvento < 0) {
+                view.MostrarMensagem("Introduza um ID válido ou 0 para sair.");
                 return;
             }
 
