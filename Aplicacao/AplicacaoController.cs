@@ -1,6 +1,7 @@
 using System;
 using GestorEventos.Eventos;
 using GestorEventos.Inscricoes;
+using GestorEventos.Partilhado.Servicos;
 using GestorEventos.Relatorios;
 
 namespace GestorEventos.Aplicacao {
@@ -22,9 +23,18 @@ namespace GestorEventos.Aplicacao {
 
             RelatorioView relatorioView = new RelatorioView();
             RelatorioModel relatorioModel = new RelatorioModel();
+            EventosDominioHandler eventosDominioHandler = new EventosDominioHandler();
 
             NotificacaoAnulacaoHandler notificacaoAnulacaoHandler = new NotificacaoAnulacaoHandler(inscricaoModel);
+
+            eventoModel.EventoCriado += eventosDominioHandler.OnEventoCriado;
+            eventoModel.EventoAlterado += eventosDominioHandler.OnEventoAlterado;
             eventoModel.EventoCancelado += notificacaoAnulacaoHandler.OnEventoCancelado;
+            inscricaoModel.InscricaoCriada += eventosDominioHandler.OnInscricaoCriada;
+            inscricaoModel.InscricaoAlterada += eventosDominioHandler.OnInscricaoAlterada;
+            inscricaoModel.InscricaoCancelada += eventosDominioHandler.OnInscricaoCancelada;
+            AtualizadorEstadosService.EventoTerminado += eventosDominioHandler.OnEventoTerminado;
+            AtualizadorEstadosService.InscricaoTerminada += eventosDominioHandler.OnInscricaoTerminada;
 
             eventoModel.AtualizarEstados();
             
