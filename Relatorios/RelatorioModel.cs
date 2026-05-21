@@ -185,6 +185,7 @@ namespace GestorEventos.Relatorios {
             conteudo.AppendLine(string.Format("Evento: {0}", evento.Nome));
             conteudo.AppendLine(string.Format("Local: {0}", evento.Local));
             conteudo.AppendLine(string.Format("Data: {0:dd/MM/yyyy}", evento.Data));
+            conteudo.AppendLine(string.Format("Estado: {0}", FormatarEstado(evento.Estado)));       //Acrescentado estado do evento
             conteudo.AppendLine(string.Format("Total de lugares inscritos: {0}", SomarQuantidadeInscricoes(inscricoes)));
 
             if (inscricoes.Count == 0) {
@@ -193,20 +194,25 @@ namespace GestorEventos.Relatorios {
             }
 
             conteudo.AppendLine("Inscritos:");
+
+            const string formatoTabela = "{0,-3} | {1,-18} | {2,-24} | {3,-20} | {4,3}";
+
             conteudo.AppendLine(string.Format(
-                "{0,-13} | {1,-35} | {2,-10} | {3}",
-                "ID inscricao",
+                formatoTabela,
+                "ID",
+                "Nome participante",
                 "Email participante",
                 "Estado",
-                "Quantidade"));
-            conteudo.AppendLine(new string('-', 85));
+                "Qtd"));
+            conteudo.AppendLine(new string('-', 80));
 
             foreach (Inscricao inscricao in inscricoes) {
                 conteudo.AppendLine(string.Format(
-                    "{0,-13} | {1,-35} | {2,-10} | {3}",
+                    formatoTabela,
                     inscricao.Id,
+                    inscricao.NomeParticipante,
                     inscricao.EmailParticipante,
-                    inscricao.Estado,
+                    FormatarEstado(inscricao.Estado),
                     inscricao.Quantidade));
             }
 
@@ -334,12 +340,10 @@ namespace GestorEventos.Relatorios {
             using PdfDocument documento = new PdfDocument();
             documento.Info.Title = documentoPdf.Titulo;
 
-            PdfPage pagina = documento.AddPage();
-            pagina.Size = PageSize.A4;
-
+            PdfPage pagina = CriarPaginaPdf(documento);
             XGraphics grafico = XGraphics.FromPdfPage(pagina);
             XFont fonteTitulo = new XFont("Arial", 16, XFontStyleEx.Bold);
-            XFont fonteCorpo = new XFont("Arial", 10, XFontStyleEx.Regular);
+            XFont fonteCorpo = new XFont("Arial", 9, XFontStyleEx.Regular);
 
             const double margem = 40;
             const double alturaLinha = 14;
@@ -358,25 +362,32 @@ namespace GestorEventos.Relatorios {
                 if (y + alturaLinha > pagina.Height.Point - margem) {
                     grafico.Dispose();
 
-                    pagina = documento.AddPage();
-                    pagina.Size = PageSize.A4;
-
+                    pagina = CriarPaginaPdf(documento);
                     grafico = XGraphics.FromPdfPage(pagina);
                     y = margem;
                 }
 
-                grafico.DrawString(
-                    linha,
+                DesenharLinhaPdf(
+                    grafico,
                     fonteCorpo,
-                    XBrushes.Black,
-                    new XRect(margem, y, pagina.Width.Point - margem * 2, alturaLinha),
-                    XStringFormats.TopLeft);
+                    linha,
+                    margem,
+                    y,
+                    pagina.Width.Point - margem * 2,
+                    alturaLinha);
 
                 y += alturaLinha;
             }
 
             grafico.Dispose();
             documento.Save(documentoPdf.CaminhoFicheiro);
+        }
+
+        private PdfPage CriarPaginaPdf(PdfDocument documento) {
+            PdfPage pagina = documento.AddPage();
+            pagina.Size = PageSize.A4;
+            pagina.Orientation = PageOrientation.Portrait;
+            return pagina;
         }
 
         private List<string> SepararLinhasPdf(string texto, XGraphics grafico, XFont fonte, double larguraMaxima) {
@@ -392,7 +403,108 @@ namespace GestorEventos.Relatorios {
             return linhas;
         }
 
-        private List<string> QuebrarLinhaPdf(string linhaOriginal, XGraphics grafico, XFont fonte, double larguraMaxima) {
+        private void DesenharLinhaPdf(XGraphics grafico, XFont fonte, string linha, double x, double y, double largura, double alturaLinha) {
+            if (TentarObterSegmentosEstado(linha, out string prefixo, out string estado, out string sufixo, out bool estadoVermelho)) {
+                XBrush pincelEstado = estadoVermelho ? XBrushes.Red : XBrushes.Black;
+
+                grafico.DrawString(
+                    prefixo,
+                    fonte,
+                    XBrushes.Black,
+                    new XRect(x, y, largura, alturaLinha),
+                    XStringFormats.TopLeft);
+
+                double larguraPrefixo = grafico.MeasureString(prefixo, fonte).Width;
+                grafico.DrawString(
+                    estado,
+                    fonte,
+                    pincelEstado,
+                    new XRect(x + larguraPrefixo, y, largura - larguraPrefixo, alturaLinha),
+                    XStringFormats.TopLeft);
+
+                double larguraEstado = grafico.MeasureString(estado, fonte).Width;
+                grafico.DrawString(
+                    sufixo,
+                    fonte,
+                    XBrushes.Black,
+                    new XRect(x + larguraPrefixo + larguraEstado, y, largura - larguraPrefixo - larguraEstado, alturaLinha),
+                    XStringFormats.TopLeft);
+
+                return;
+            }
+
+            grafico.DrawString(
+                linha,
+                fonte,
+                XBrushes.Black,
+                new XRect(x, y, largura, alturaLinha),
+                XStringFormats.TopLeft);
+        }
+
+        private bool TentarObterSegmentosEstado(string linha, out string prefixo, out string estado, out string sufixo, out bool estadoVermelho) {
+            prefixo = string.Empty;
+            estado = string.Empty;
+            sufixo = string.Empty;
+            estadoVermelho = false;
+
+            if (linha.StartsWith("Estado: ", StringComparison.OrdinalIgnoreCase)) {
+                prefixo = "Estado: ";
+                estado = linha.Substring(prefixo.Length);
+                sufixo = string.Empty;
+                estadoVermelho = !EstadoAtivo(estado);
+                return true;
+            }
+
+            if (!linha.Contains("|")) {
+                return false;
+            }
+
+            string[] partes = linha.Split('|');
+            if (partes.Length < 5) {
+                return false;
+            }
+
+            string campoEstado = partes[3];
+            string estadoLimpo = campoEstado.Trim();
+
+            if (string.Equals(estadoLimpo, "Estado", StringComparison.OrdinalIgnoreCase) ||
+                string.IsNullOrWhiteSpace(estadoLimpo)) {
+                return false;
+            }
+
+            int inicioCampoEstado = 0;
+            for (int i = 0; i < 3; i++) {
+                inicioCampoEstado += partes[i].Length + 1;
+            }
+
+            int espacosAntes = campoEstado.Length - campoEstado.TrimStart().Length;
+            int inicioEstado = inicioCampoEstado + espacosAntes;
+
+            prefixo = linha.Substring(0, inicioEstado);
+            estado = estadoLimpo;
+            sufixo = linha.Substring(inicioEstado + estadoLimpo.Length);
+            estadoVermelho = !EstadoAtivo(estadoLimpo);
+
+            return true;
+        }
+
+        private string FormatarEstado(string estado) {
+            string estadoNormalizado = (estado ?? string.Empty).Trim();
+
+            if (string.IsNullOrWhiteSpace(estadoNormalizado)) {
+                return string.Empty;
+            }
+
+            estadoNormalizado = estadoNormalizado.Replace('_', ' ').ToLowerInvariant();
+            return char.ToUpperInvariant(estadoNormalizado[0]) + estadoNormalizado.Substring(1);
+        }
+
+        private bool EstadoAtivo(string estado) {
+            string estadoNormalizado = (estado ?? string.Empty).Trim().ToLowerInvariant();
+            return estadoNormalizado == "ativo" || estadoNormalizado == "ativa";
+        }
+
+                private List<string> QuebrarLinhaPdf(string linhaOriginal, XGraphics grafico, XFont fonte, double larguraMaxima) {
             List<string> linhas = new List<string>();
 
             if (string.IsNullOrWhiteSpace(linhaOriginal)) {
