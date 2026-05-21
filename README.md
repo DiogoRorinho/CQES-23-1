@@ -10,10 +10,11 @@ A aplicação é desenvolvida em C# e corre em **.NET 10**.
 - Criar, alterar, cancelar e listar eventos.
 - Criar inscrições para eventos disponíveis.
 - Validar dados introduzidos pelo utilizador, como campos obrigatórios e números positivos.
-- Simular a criação de bilhetes em PDF para inscrições.
+- Gerar bilhetes e comprovativos em PDF para inscrições.
 - Listar inscritos por evento.
 - Consultar a ocupação dos eventos.
 - Tratar o cancelamento de eventos, identificando inscrições afetadas.
+- Atualizar automaticamente estados de eventos e inscrições quando a data do evento passa.
 
 ## Como funciona
 
@@ -28,17 +29,17 @@ Quando um evento é cancelado, a aplicação aciona o processo associado ao canc
 
 ## Estado atual
 
-A aplicação já tem os principais menus e fluxos encaminhados e inclui um primeiro draft de persistência em SQLite.
+A aplicação já tem os principais menus e fluxos encaminhados e inclui persistência em SQLite.
 
 A base de dados é criada automaticamente no arranque da aplicação, usando os scripts SQL existentes na pasta `Dados/Sql/`. Quando a configuração `SeedDemoData` está ativa no ficheiro `appsettings.json`, a aplicação também insere dados de demonstração se a base de dados estiver vazia.
 
-Também a geração de PDFs e o envio de notificações estão preparados como intenção de funcionamento, mas ainda não geram documentos reais nem enviam mensagens reais.
+A geração de PDFs está implementada para os fluxos de inscrições e relatórios.
+
+Quando ocorre cancelamento de evento, a aplicação regista notificações em ficheiros de texto na pasta `Notificacoes/` junto ao executável, incluindo referência ao comprovativo PDF de cancelamento.
 
 Funcionalidades ainda previstas:
 
 - aplicar validações completas às regras de negócio;
-- gerar PDFs reais para bilhetes e comprovativos;
-- enviar notificações reais aos participantes;
 - concluir os fluxos de alteração e cancelamento de inscrições.
 
 ## Requisitos
@@ -92,7 +93,7 @@ O schema inclui:
 - `eventos` - dados principais dos eventos, estado, capacidade e timestamps.
 - `inscricoes` - inscrições associadas a eventos através de foreign key.
 
-A aplicação usa soft-delete através do campo `estado`, por exemplo `ativo`, `cancelado`, `ativa`, `cancelada` e `cancelada_por_evento`. As operações principais usam SQLite através dos Models, mantendo a separação MVC.
+A aplicação usa soft-delete através do campo `estado`, por exemplo `ativo`, `cancelado`, `terminado`, `ativa`, `cancelada`, `cancelada_por_evento` e `terminada`. As operações principais usam SQLite através dos Models, mantendo a separação MVC.
 
 ## Organização dos ficheiros
 
