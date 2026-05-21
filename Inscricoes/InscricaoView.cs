@@ -4,7 +4,7 @@ using GestorEventos.Partilhado;
 
 namespace GestorEventos.Inscricoes
 {
- 
+
     class InscricaoView
     {
         // Exibe o menu de inscricoes e solicita a opcao do utilizador
@@ -20,27 +20,43 @@ namespace GestorEventos.Inscricoes
             Console.Write("Opcao: ");
         }
 
-        // Exibe a lista de eventos com vagas disponiveis
-        public void MostrarListaEventos(List<Evento> listaEventosComVagas)
+        // Exibe a lista de eventos com a disponibilidade calculada pelo Model
+        public void MostrarListaEventos(List<EventoDisponivel> listaEventosComDisponibilidade)
         {
             Console.WriteLine();
-            Console.WriteLine("Eventos com vagas disponiveis:");
+            Console.WriteLine("Eventos:");
 
-            if (listaEventosComVagas == null || listaEventosComVagas.Count == 0)
+            if (listaEventosComDisponibilidade == null || listaEventosComDisponibilidade.Count == 0)
             {
-                Console.WriteLine("Nao existem eventos com vagas disponiveis.");
+                Console.WriteLine("Nao existem eventos registados.");
                 return;
             }
 
-            foreach (Evento evento in listaEventosComVagas)
+            const string formatoTabela = "{0,-5} {1,-30} {2,-12} {3,-20} {4,10} {5,15} {6,-12}";
+            Console.WriteLine(string.Format(
+                formatoTabela,
+                "ID",
+                "Nome",
+                "Data",
+                "Local",
+                "Capacidade",
+                "Disponibilidade",
+                "Estado"));
+            Console.WriteLine(new string('-', 112));
+
+            foreach (EventoDisponivel evento in listaEventosComDisponibilidade)
             {
-                Console.WriteLine(string.Format(
-                    "{0} - {1} | {2:dd/MM/yyyy} | {3} | capacidade: {4}",
+                string linha = string.Format(
+                    formatoTabela,
                     evento.Id,
-                    evento.Nome,
-                    evento.Data,
-                    evento.Local,
-                    evento.Capacidade));
+                    LimitarTexto(evento.Nome, 30),
+                    FormatarData(evento.Data),
+                    LimitarTexto(evento.Local, 20),
+                    evento.Capacidade,
+                    evento.Disponibilidade,
+                    FormatarEstado(evento.Estado));
+
+                EscreverLinhaComCor(linha, !EstadoAtivo(evento.Estado));
             }
         }
 
@@ -82,7 +98,7 @@ namespace GestorEventos.Inscricoes
             Console.Write("Indique o ID da inscricao a cancelar: ");
         }
 
-        // Exibe uma mensagem genérica
+        // Exibe uma mensagem generica
         public void MostrarMensagem(string mensagem)
         {
             Console.WriteLine(mensagem);
@@ -96,7 +112,7 @@ namespace GestorEventos.Inscricoes
             Console.WriteLine(string.Format("Caminho: {0}", bilhetePdf.CaminhoFicheiro));
         }
 
-        // Exibe a lista de inscricoes, mostrando os detalhes de cada inscricao
+        // Exibe a lista de inscricoes em formato de tabela
         public void MostrarListaInscricoes(List<Inscricao> listaInscricoes)
         {
             Console.WriteLine();
@@ -108,17 +124,32 @@ namespace GestorEventos.Inscricoes
                 return;
             }
 
+            const string formatoTabela = "{0,-5} {1,-8} {2,-24} {3,-30} {4,6} {5,6} {6,-18}";
+            Console.WriteLine(string.Format(
+                formatoTabela,
+                "ID",
+                "Evento",
+                "Nome",
+                "Email",
+                "Idade",
+                "Qtd",
+                "Estado"));
+            Console.WriteLine(new string('-', 105));
+
             foreach (Inscricao inscricao in listaInscricoes)
             {
-                Console.WriteLine(string.Format(
-                    "{0} - Evento {1} | {2} | {3} | idade: {4} | qtd: {5} | estado: {6}",
+                string prefixo = string.Format(
+                    "{0,-5} {1,-8} {2,-24} {3,-30} {4,6} {5,6} ",
                     inscricao.Id,
                     inscricao.IdEvento,
-                    inscricao.NomeParticipante,
-                    inscricao.EmailParticipante,
+                    LimitarTexto(inscricao.NomeParticipante, 24),
+                    LimitarTexto(inscricao.EmailParticipante, 30),
                     inscricao.IdadeParticipante,
-                    inscricao.Quantidade,
-                    inscricao.Estado));
+                    inscricao.Quantidade);
+
+                Console.Write(prefixo);
+                EscreverEstado(FormatarEstado(inscricao.Estado), EstadoAtivo(inscricao.Estado));
+                Console.WriteLine();
             }
         }
 
@@ -132,7 +163,7 @@ namespace GestorEventos.Inscricoes
             Console.WriteLine(string.Format("Email: {0}", dadosInscricao.EmailParticipante));
             Console.WriteLine(string.Format("Idade: {0}", dadosInscricao.IdadeParticipante));
             Console.WriteLine(string.Format("Quantidade: {0}", dadosInscricao.Quantidade));
-            Console.WriteLine(string.Format("Estado: {0}", dadosInscricao.Estado));
+            Console.WriteLine(string.Format("Estado: {0}", FormatarEstado(dadosInscricao.Estado)));
         }
 
         // Solicita a confirmacao do cancelamento de uma inscricao
@@ -163,6 +194,78 @@ namespace GestorEventos.Inscricoes
         public void FinalizarOperacaoMenu()
         {
             Console.WriteLine();
+        }
+
+        private void EscreverLinhaComCor(string linha, bool vermelho)
+        {
+            ConsoleColor corOriginal = Console.ForegroundColor;
+
+            if (vermelho)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+            }
+
+            Console.WriteLine(linha);
+            Console.ForegroundColor = corOriginal;
+        }
+
+        private void EscreverEstado(string estado, bool ativo)
+        {
+            ConsoleColor corOriginal = Console.ForegroundColor;
+
+            if (!ativo)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+            }
+
+            Console.Write(estado);
+            Console.ForegroundColor = corOriginal;
+        }
+
+        private bool EstadoAtivo(string estado)
+        {
+            string estadoNormalizado = (estado ?? string.Empty).Trim().ToLowerInvariant();
+            return estadoNormalizado == "ativo" || estadoNormalizado == "ativa";
+        }
+
+        private string FormatarEstado(string estado)
+        {
+            string estadoNormalizado = (estado ?? string.Empty).Trim();
+
+            if (string.IsNullOrWhiteSpace(estadoNormalizado))
+            {
+                return string.Empty;
+            }
+
+            estadoNormalizado = estadoNormalizado.Replace('_', ' ').ToLowerInvariant();
+            return char.ToUpperInvariant(estadoNormalizado[0]) + estadoNormalizado.Substring(1);
+        }
+
+        private string FormatarData(DateTime data)
+        {
+            if (data == DateTime.MinValue)
+            {
+                return string.Empty;
+            }
+
+            return data.ToString("dd/MM/yyyy");
+        }
+
+        private string LimitarTexto(string texto, int tamanhoMaximo)
+        {
+            string textoNormalizado = texto ?? string.Empty;
+
+            if (textoNormalizado.Length <= tamanhoMaximo)
+            {
+                return textoNormalizado;
+            }
+
+            if (tamanhoMaximo <= 3)
+            {
+                return textoNormalizado.Substring(0, tamanhoMaximo);
+            }
+
+            return textoNormalizado.Substring(0, tamanhoMaximo - 3) + "...";
         }
     }
 }

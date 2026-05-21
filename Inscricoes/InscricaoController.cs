@@ -12,7 +12,7 @@ namespace GestorEventos.Inscricoes
         private readonly InscricaoModel model;
         private bool regressarMenuPrincipal;
 
-        
+
         public InscricaoController(AplicacaoController aplicacaoController, InscricaoView view, InscricaoModel model)
         {
             this.aplicacaoController = aplicacaoController;
@@ -42,7 +42,7 @@ namespace GestorEventos.Inscricoes
                 }
             }
         }
-        
+
         public bool SelecionarOpcao(string opcao)
         {
             switch (NormalizarOpcao(opcao))
@@ -76,15 +76,22 @@ namespace GestorEventos.Inscricoes
         // Metodo para criar uma nova inscricao, solicitando os dados necessarios e validando as entradas
         private void CriarInscricao()
         {
-            List<Evento> eventosDisponiveis = model.ListarEventosDisponiveis();
+            List<EventoDisponivel> eventosDisponiveis = model.ListarEventosDisponiveis();
 
             if (eventosDisponiveis == null || eventosDisponiveis.Count == 0)
             {
-                view.MostrarMensagem("Nao existem eventos com vagas disponiveis.");
+                view.MostrarMensagem("Nao existem eventos registados.");
                 return;
             }
 
             view.MostrarListaEventos(eventosDisponiveis);
+
+            if (!ExisteEventoDisponivelParaInscricao(eventosDisponiveis))
+            {
+                view.MostrarMensagem("Nao existem eventos ativos com disponibilidade para novas inscricoes.");
+                return;
+            }
+
             view.SolicitarDadosCriacao();
 
             int idEvento = LerIdEventoValido(eventosDisponiveis);
@@ -96,7 +103,7 @@ namespace GestorEventos.Inscricoes
 
             DadosInscricao dados = new DadosInscricao
             {
-                IdEvento = LerIdEventoValido(eventosDisponiveis),
+                IdEvento = idEvento,
                 NomeParticipante = LerTextoNaoVazio("Nome do inscrito: "),
                 EmailParticipante = LerTextoNaoVazio("Email do inscrito: "),
                 IdadeParticipante = LerInteiroPositivo("Idade do inscrito: "),
@@ -117,11 +124,12 @@ namespace GestorEventos.Inscricoes
         // Metodo para alterar uma inscricao existente, permitindo ao utilizador escolher a inscricao a alterar e os novos dados
         private void AlterarInscricao()
         {
-            List<Inscricao> inscricoes = model.ListarInscricoes();
+            List<Inscricao> inscricoes = model.ListarInscricoesAtivas();
             view.MostrarListaInscricoes(inscricoes);
 
             if (inscricoes == null || inscricoes.Count == 0)
             {
+                view.MostrarMensagem("Nao existem inscricoes ativas para alterar.");
                 return;
             }
 
@@ -141,22 +149,25 @@ namespace GestorEventos.Inscricoes
                 return;
             }
 
+            List<EventoDisponivel> eventosDisponiveis = model.ListarEventosDisponiveis();
+
             view.MostrarDadosParaEdicao(inscricao);
-            view.MostrarListaEventos(model.ListarEventosDisponiveis());
+            view.MostrarListaEventos(eventosDisponiveis);
             view.SolicitarDadosEdicao();
 
-            DadosInscricao dados = RecolherDadosAlteracaoInscricao(inscricao);
+            DadosInscricao dados = RecolherDadosAlteracaoInscricao(inscricao, eventosDisponiveis);
             IntroduzirDadosAlterados(idInscricao, dados);
         }
 
         // Metodo para cancelar uma inscricao existente, permitindo ao utilizador escolher a inscricao a cancelar e confirmando a operacao
         private void CancelarInscricao()
         {
-            List<Inscricao> inscricoes = model.ListarInscricoes();
+            List<Inscricao> inscricoes = model.ListarInscricoesAtivas();
             view.MostrarListaInscricoes(inscricoes);
 
             if (inscricoes == null || inscricoes.Count == 0)
             {
+                view.MostrarMensagem("Nao existem inscricoes ativas para cancelar.");
                 return;
             }
 
@@ -195,13 +206,14 @@ namespace GestorEventos.Inscricoes
         }
 
         // Metodo auxiliar para recolher os dados de alteracao de uma inscricao, permitindo ao utilizador manter os valores atuais ou introduzir novos valores
-        private DadosInscricao RecolherDadosAlteracaoInscricao(Inscricao inscricao)
+        private DadosInscricao RecolherDadosAlteracaoInscricao(Inscricao inscricao, List<EventoDisponivel> eventosDisponiveis)
         {
             return new DadosInscricao
             {
-                IdEvento = LerInteiroPositivoAlteravel(
+                IdEvento = LerIdEventoValidoAlteravel(
                     string.Format("ID do evento [{0}]: ", inscricao.IdEvento),
-                    inscricao.IdEvento),
+                    inscricao.IdEvento,
+                    eventosDisponiveis),
                 NomeParticipante = LerTextoAlteravel(
                     string.Format("Nome do inscrito [{0}]: ", inscricao.NomeParticipante),
                     inscricao.NomeParticipante),
@@ -218,7 +230,7 @@ namespace GestorEventos.Inscricoes
         }
 
         // Metodo auxiliar para ler um ID de evento valido, verificando se o ID introduzido corresponde a um evento disponivel
-        private int LerIdEventoValido(List<Evento> eventosDisponiveis)
+        private int LerIdEventoValido(List<EventoDisponivel> eventosDisponiveis)
         {
             while (true)
             {
@@ -237,16 +249,98 @@ namespace GestorEventos.Inscricoes
                     return 0;
                 }
 
-                foreach (Evento evento in eventosDisponiveis)
+                EventoDisponivel? eventoEncontrado = ObterEventoDaLista(eventosDisponiveis, idEvento);
+
+                if (eventoEncontrado == null)
                 {
-                    if (evento.Id == idEvento)
-                    {
-                        return idEvento;
-                    }
+                    view.MostrarMensagem("O ID indicado nao corresponde a um evento existente.");
+                    continue;
                 }
 
-                view.MostrarMensagem("O ID indicado nao corresponde a um evento disponivel.");
+                if (!EventoPodeReceberInscricao(eventoEncontrado))
+                {
+                    view.MostrarMensagem("O evento indicado nao esta ativo ou nao tem disponibilidade.");
+                    continue;
+                }
+
+                return idEvento;
             }
+        }
+
+        // Metodo auxiliar para ler um ID de evento alteravel, permitindo manter o valor atual com Enter
+        private int LerIdEventoValidoAlteravel(string pedido, int valorAtual, List<EventoDisponivel> eventosDisponiveis)
+        {
+            while (true)
+            {
+                view.SolicitarCampoTexto(pedido);
+                string entrada = LerEntrada();
+
+                if (string.IsNullOrWhiteSpace(entrada))
+                {
+                    return valorAtual;
+                }
+
+                if (!int.TryParse(entrada, out int idEvento) || idEvento <= 0)
+                {
+                    view.MostrarMensagem("ID de evento invalido.");
+                    continue;
+                }
+
+                EventoDisponivel? eventoEncontrado = ObterEventoDaLista(eventosDisponiveis, idEvento);
+
+                if (eventoEncontrado == null)
+                {
+                    view.MostrarMensagem("O ID indicado nao corresponde a um evento existente.");
+                    continue;
+                }
+
+                if (!EventoPodeReceberInscricao(eventoEncontrado))
+                {
+                    view.MostrarMensagem("O evento indicado nao esta ativo ou nao tem disponibilidade.");
+                    continue;
+                }
+
+                return idEvento;
+            }
+        }
+
+        private EventoDisponivel? ObterEventoDaLista(List<EventoDisponivel> eventosDisponiveis, int idEvento)
+        {
+            foreach (EventoDisponivel evento in eventosDisponiveis)
+            {
+                if (evento.Id == idEvento)
+                {
+                    return evento;
+                }
+            }
+
+            return null;
+        }
+
+        private bool ExisteEventoDisponivelParaInscricao(List<EventoDisponivel> eventosDisponiveis)
+        {
+            foreach (EventoDisponivel evento in eventosDisponiveis)
+            {
+                if (EventoPodeReceberInscricao(evento))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool EventoPodeReceberInscricao(EventoDisponivel evento)
+        {
+            return evento != null &&
+                   evento.Disponibilidade > 0 &&
+                   EstadoAtivo(evento.Estado);
+        }
+
+        private bool EstadoAtivo(string estado)
+        {
+            string estadoNormalizado = (estado ?? string.Empty).Trim().ToLowerInvariant();
+            return estadoNormalizado == "ativo" || estadoNormalizado == "ativa";
         }
 
         // Metodo auxiliar para ler um texto nao vazio, solicitando ao utilizador que introduza um valor e validando que o valor nao esta vazio ou composto apenas por espacos
