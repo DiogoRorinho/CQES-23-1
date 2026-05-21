@@ -49,6 +49,10 @@ namespace GestorEventos.Eventos {
                 return CriarResultado(false, "Dados do evento invalidos.");
             }
 
+            if (!DataEventoEhFutura(dados.Data)) {
+                return CriarResultado(false, "A data do evento deve ser futura.");
+            }
+
             using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
             using SqliteTransaction transacao = ligacao.BeginTransaction();
             using SqliteCommand comando = ligacao.CreateCommand();
@@ -68,15 +72,30 @@ namespace GestorEventos.Eventos {
             return ObterListaEventos();
         }
 
+        public List<Evento> ListarEventosAtivos() {
+            return ObterListaEventos("ativo", ordenarPorId: true);
+        }
+
         public List<Evento> ObterListaEventos() {
+            return ObterListaEventos(null, ordenarPorId: false);
+        }
+
+        private List<Evento> ObterListaEventos(string? estado, bool ordenarPorId) {
             List<Evento> eventos = new List<Evento>();
             AtualizarEstados();
             using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
             using SqliteCommand comando = ligacao.CreateCommand();
-            comando.CommandText = @"
+            string ordem = ordenarPorId ? "id" : "data, id";
+            comando.CommandText = string.Format(@"
                 SELECT id, nome, local, data, estado, capacidade
-                FROM eventos
-                ORDER BY data, id;";
+                FROM eventos{0}
+                ORDER BY {1};",
+                string.IsNullOrWhiteSpace(estado) ? string.Empty : " WHERE estado = @estado",
+                ordem);
+
+            if (!string.IsNullOrWhiteSpace(estado)) {
+                comando.Parameters.AddWithValue("@estado", estado);
+            }
 
             using SqliteDataReader leitor = comando.ExecuteReader();
             while (leitor.Read()) {
@@ -128,6 +147,10 @@ namespace GestorEventos.Eventos {
                 return CriarResultado(false, "Dados do evento invalidos.");
             }
 
+            if (!DataEventoEhFutura(dados.Data)) {
+                return CriarResultado(false, "A data do evento deve ser futura.");
+            }
+
             int quantidadeInscrita = ObterQuantidadeInscritaAtiva(idEvento);
             if (quantidadeInscrita > dados.Capacidade) {
                 return CriarResultado(false, "A capacidade nao pode ser inferior ao numero de inscricoes ativas.");
@@ -167,6 +190,10 @@ namespace GestorEventos.Eventos {
             }
 
             if (!string.Equals(eventoCancelado.Estado, "ativo", StringComparison.OrdinalIgnoreCase)) {
+                if (string.Equals(eventoCancelado.Estado, "terminado", StringComparison.OrdinalIgnoreCase)) {
+                    return CriarResultado(false, "Evento ja se encontra terminado.");
+                }
+
                 return CriarResultado(false, "Evento ja se encontra cancelado.");
             }
 
@@ -234,6 +261,10 @@ namespace GestorEventos.Eventos {
 
         public string ObterConnectionString() {
             return connectionString;
+        }
+
+        private static bool DataEventoEhFutura(DateTime dataEvento) {
+            return dataEvento.Date > DateTime.Today;
         }
 
         private static ResultadoOperacaoEvento CriarResultado(bool sucesso, string mensagem) {

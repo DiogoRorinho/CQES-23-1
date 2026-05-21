@@ -5,6 +5,7 @@ using GestorEventos.Partilhado;
 
 namespace GestorEventos.Eventos {
     class EventoController {
+        private const string MensagemIdInvalidoOuSaida = "Introduza um ID valido ou 0 para sair.";
         private readonly AplicacaoController aplicacaoController;
         private readonly EventoView view;
         private readonly EventoModel model;
@@ -76,24 +77,29 @@ namespace GestorEventos.Eventos {
         }
 
         private void AlterarEvento() {
-            view.MostrarListaEventos(model.ListarEventos());
+            List<Evento> eventosAtivos = model.ListarEventosAtivos();
+            if (eventosAtivos.Count == 0) {
+                view.MostrarMensagem("Nao existem eventos ativos para alterar.");
+                return;
+            }
+
+            view.MostrarListaEventos(eventosAtivos);
             view.SolicitarIdEventoAlteracao();
 
             int idEvento;
             if (!int.TryParse(LerEntrada(), out idEvento) || idEvento < 0) {
-                view.MostrarMensagem("ID de evento invalido.");
+                view.MostrarMensagem(MensagemIdInvalidoOuSaida);
                 return;
             }
 
-            if (idEvento == 0)      // Alterado para permitir cancelar a operação de alteração.
-                {
-                    view.MostrarMensagem("Alteracao de evento cancelada.");
-                    return;
-                }
+            if (idEvento == 0) {
+                view.MostrarMensagem("Alteracao de evento cancelada.");
+                return;
+            }
 
-            Evento? evento = model.ObterEvento(idEvento);
+            Evento? evento = EncontrarEventoPorId(eventosAtivos, idEvento);
             if (evento == null) {
-                view.MostrarMensagem("Evento nao encontrado.");
+                view.MostrarMensagem(MensagemIdInvalidoOuSaida);
                 return;
             }
 
@@ -106,23 +112,29 @@ namespace GestorEventos.Eventos {
         }
 
         private void CancelarEvento() {
-            view.MostrarListaEventos(model.ListarEventos());
+            List<Evento> eventosAtivos = model.ListarEventosAtivos();
+            if (eventosAtivos.Count == 0) {
+                view.MostrarMensagem("Nao existem eventos ativos para cancelar.");
+                return;
+            }
+
+            view.MostrarListaEventos(eventosAtivos);
             view.SolicitarIdEventoCancelamento();
 
             int idEvento;
             if (!int.TryParse(LerEntrada(), out idEvento) || idEvento < 0) {
-                view.MostrarMensagem("ID de evento invalido.");
+                view.MostrarMensagem(MensagemIdInvalidoOuSaida);
                 return;
             }
-            if (idEvento == 0)      // Alterado para permitir cancelar a operação de cancelamento.
-                {
-                    view.MostrarMensagem("Cancelamento de evento cancelado.");
-                    return;
-                }
 
-            Evento? evento = model.ObterEvento(idEvento);
+            if (idEvento == 0) {
+                view.MostrarMensagem("Cancelamento de evento cancelado.");
+                return;
+            }
+
+            Evento? evento = EncontrarEventoPorId(eventosAtivos, idEvento);
             if (evento == null) {
-                view.MostrarMensagem("Evento nao encontrado.");
+                view.MostrarMensagem(MensagemIdInvalidoOuSaida);
                 return;
             }
 
@@ -137,6 +149,16 @@ namespace GestorEventos.Eventos {
 
             ResultadoOperacaoEvento resultado = model.CancelarEvento(idEvento);
             view.MostrarResultadoOperacao(resultado.Mensagem);
+        }
+
+        private static Evento? EncontrarEventoPorId(List<Evento> eventos, int idEvento) {
+            foreach (Evento evento in eventos) {
+                if (evento.Id == idEvento) {
+                    return evento;
+                }
+            }
+
+            return null;
         }
 
         private void ListarEventos() {

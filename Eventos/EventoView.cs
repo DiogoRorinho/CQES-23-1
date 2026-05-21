@@ -37,11 +37,11 @@ namespace GestorEventos.Eventos {
         }
 
         public void SolicitarIdEventoAlteracao() {
-            Console.Write("Indique o ID do evento a alterar [0 para cancelar]: "); // Editado para permitir cancelar a operação de alteração.
+            Console.Write("Introduza um ID valido ou 0 para sair: ");
         }
 
         public void SolicitarIdEventoCancelamento() {
-            Console.Write("Indique o ID do evento a cancelar [0 para cancelar]: "); // Editado para permitir cancelar a operação de cancelamento.
+            Console.Write("Introduza um ID valido ou 0 para sair: ");
         }
 
         public void PedirConfirmacaoCancelamento() {
@@ -57,14 +57,29 @@ namespace GestorEventos.Eventos {
                 return;
             }
 
+            Console.WriteLine("ID  | Nome                 | Data       | Local                | Cap. | Estado");
+            Console.WriteLine(new string('-', 80));
+
             foreach (Evento evento in listaEventos) {
+                bool destacar = !string.Equals(evento.Estado, "ativo", StringComparison.OrdinalIgnoreCase);
+                ConsoleColor corOriginal = Console.ForegroundColor;
+
+                if (destacar) {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                }
+
                 Console.WriteLine(string.Format(
-                    "{0} - {1} | {2:dd/MM/yyyy} | {3} | capacidade: {4}",
+                    "{0,-3} | {1,-20} | {2:dd/MM/yyyy} | {3,-20} | {4,4} | {5}",
                     evento.Id,
-                    evento.Nome,
+                    LimitarTexto(evento.Nome, 20),
                     evento.Data,
-                    evento.Local,
-                    evento.Capacidade));
+                    LimitarTexto(evento.Local, 20),
+                    evento.Capacidade,
+                    evento.Estado));
+
+                if (destacar) {
+                    Console.ForegroundColor = corOriginal;
+                }
             }
         }
 
@@ -94,6 +109,18 @@ namespace GestorEventos.Eventos {
 
         public void FinalizarOperacaoMenu() {
             Console.WriteLine();
+        }
+
+        private static string LimitarTexto(string texto, int limite) {
+            if (string.IsNullOrWhiteSpace(texto)) {
+                return string.Empty;
+            }
+
+            if (texto.Length <= limite) {
+                return texto;
+            }
+
+            return texto.Substring(0, limite - 3) + "...";
         }
     }
 }
