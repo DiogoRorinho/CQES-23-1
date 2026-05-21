@@ -13,7 +13,11 @@ namespace GestorEventos.Eventos {
         private readonly IAtualizadorEstados atualizadorEstados;
 
         public delegate void EventoCanceladoHandler(object sender, EventoCanceladoEventArgs e);
+        public delegate void EventoCriadoHandler(object sender, EventoCriadoEventArgs e);
+        public delegate void EventoAlteradoHandler(object sender, EventoAlteradoEventArgs e);
         public event EventoCanceladoHandler? EventoCancelado;
+        public event EventoCriadoHandler? EventoCriado;
+        public event EventoAlteradoHandler? EventoAlterado;
 
         public EventoModel() {
             connectionString = ConfiguracaoAplicacao.ObterConnectionString();
@@ -23,16 +27,6 @@ namespace GestorEventos.Eventos {
         public void AtualizarEstados() {
             atualizadorEstados.AtualizarEstados();
         }
-    
-    /*class EventoModel {
-        private readonly string connectionString;
-
-        public delegate void EventoCanceladoHandler(object sender, EventoCanceladoEventArgs e);
-        public event EventoCanceladoHandler? EventoCancelado;
-
-        public EventoModel() {
-            connectionString = ConfiguracaoAplicacao.ObterConnectionString();
-        }*/
 
         public ResultadoOperacaoEvento CriarEvento(DadosEvento dados) {
             return ValidarERegistarEvento(dados);
@@ -59,11 +53,14 @@ namespace GestorEventos.Eventos {
             comando.Transaction = transacao;
             comando.CommandText = @"
                 INSERT INTO eventos (nome, local, data, estado, capacidade)
-                VALUES (@nome, @local, @data, 'ativo', @capacidade);";
+                VALUES (@nome, @local, @data, 'ativo', @capacidade);
+                SELECT last_insert_rowid();";
 
             AdicionarParametrosEvento(comando, dados);
-            comando.ExecuteNonQuery();
+            int idEventoCriado = Convert.ToInt32(comando.ExecuteScalar(), CultureInfo.InvariantCulture);
             transacao.Commit();
+
+            DispararEventoCriado(idEventoCriado, dados);
 
             return CriarResultado(true, "Evento criado com sucesso.");
         }
@@ -178,6 +175,8 @@ namespace GestorEventos.Eventos {
                 return CriarResultado(false, "Evento nao encontrado.");
             }
 
+            DispararEventoAlterado(idEvento, dados);
+
             return CriarResultado(true, "Evento alterado com sucesso.");
         }
 
@@ -257,6 +256,30 @@ namespace GestorEventos.Eventos {
                 eventoCancelado.Estado);
 
             EventoCancelado?.Invoke(this, dadosCancelamento);
+        }
+
+        private void DispararEventoCriado(int idEvento, DadosEvento dados) {
+            EventoCriadoEventArgs dadosCriacao = new EventoCriadoEventArgs(
+                idEvento,
+                dados.Nome,
+                dados.Local,
+                dados.Data,
+                dados.Capacidade,
+                DateTime.Now);
+
+            EventoCriado?.Invoke(this, dadosCriacao);
+        }
+
+        private void DispararEventoAlterado(int idEvento, DadosEvento dados) {
+            EventoAlteradoEventArgs dadosAlteracao = new EventoAlteradoEventArgs(
+                idEvento,
+                dados.Nome,
+                dados.Local,
+                dados.Data,
+                dados.Capacidade,
+                DateTime.Now);
+
+            EventoAlterado?.Invoke(this, dadosAlteracao);
         }
 
         public string ObterConnectionString() {

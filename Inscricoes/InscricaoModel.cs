@@ -19,6 +19,13 @@ namespace GestorEventos.Inscricoes
         private readonly string pastaPdfs;
         private readonly IAtualizadorEstados atualizadorEstados;
 
+        public delegate void InscricaoCriadaHandler(object sender, InscricaoCriadaEventArgs e);
+        public delegate void InscricaoAlteradaHandler(object sender, InscricaoAlteradaEventArgs e);
+        public delegate void InscricaoCanceladaHandler(object sender, InscricaoCanceladaEventArgs e);
+        public event InscricaoCriadaHandler? InscricaoCriada;
+        public event InscricaoAlteradaHandler? InscricaoAlterada;
+        public event InscricaoCanceladaHandler? InscricaoCancelada;
+
         // Construtor que inicializa as configuracoes necessarias para o modelo de inscricao
         public InscricaoModel()
         {
@@ -161,6 +168,7 @@ namespace GestorEventos.Inscricoes
                 "bilhete-inscricao-" + idInscricao + ".pdf");
 
             GerarFicheiroPdf(bilhetePdf, ConstruirConteudoBilhete(inscricao, evento));
+            DispararInscricaoCriada(inscricao);
             return bilhetePdf;
         }
 
@@ -306,6 +314,7 @@ namespace GestorEventos.Inscricoes
                 "bilhete-atualizado-" + idInscricao + ".pdf");
 
             GerarFicheiroPdf(bilhetePdf, ConstruirConteudoBilhete(inscricaoAtualizada, evento));
+            DispararInscricaoAlterada(inscricaoAtualizada);
             return bilhetePdf;
         }
 
@@ -340,8 +349,14 @@ namespace GestorEventos.Inscricoes
                   AND estado = 'ativa';";
             comando.Parameters.AddWithValue("@idInscricao", idInscricao);
             comando.Parameters.AddWithValue("@estado", estado.Trim());
-            comando.ExecuteNonQuery();
+            int linhasAfetadas = comando.ExecuteNonQuery();
             transacao.Commit();
+
+            if (linhasAfetadas > 0 &&
+                (string.Equals(estado, "cancelada", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(estado, "cancelada_por_evento", StringComparison.OrdinalIgnoreCase))) {
+                DispararInscricaoCancelada(idInscricao, estado.Trim().ToLowerInvariant());
+            }
         }
 
         // Obtem a lista de inscricoes ativas que estao associadas a um evento especifico, permitindo identificar os participantes afetados por alteracoes ou cancelamentos do evento
@@ -411,6 +426,38 @@ namespace GestorEventos.Inscricoes
         private void AtualizarEstados()
         {
             atualizadorEstados.AtualizarEstados();
+        }
+
+        private void DispararInscricaoCriada(Inscricao inscricao) {
+            InscricaoCriadaEventArgs dados = new InscricaoCriadaEventArgs(
+                inscricao.Id,
+                inscricao.IdEvento,
+                inscricao.NomeParticipante,
+                inscricao.EmailParticipante,
+                inscricao.Quantidade,
+                DateTime.Now);
+
+            InscricaoCriada?.Invoke(this, dados);
+        }
+
+        private void DispararInscricaoAlterada(Inscricao inscricao) {
+            InscricaoAlteradaEventArgs dados = new InscricaoAlteradaEventArgs(
+                inscricao.Id,
+                inscricao.IdEvento,
+                inscricao.NomeParticipante,
+                inscricao.Quantidade,
+                DateTime.Now);
+
+            InscricaoAlterada?.Invoke(this, dados);
+        }
+
+        private void DispararInscricaoCancelada(int idInscricao, string estadoFinal) {
+            InscricaoCanceladaEventArgs dados = new InscricaoCanceladaEventArgs(
+                idInscricao,
+                estadoFinal,
+                DateTime.Now);
+
+            InscricaoCancelada?.Invoke(this, dados);
         }
         
         // Cria um resultado de criacao de inscricao, encapsulando o sucesso da operacao, uma mensagem descritiva e um possivel documento PDF gerado como bilhete
