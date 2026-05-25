@@ -51,38 +51,64 @@ namespace GestorEventos.Relatorios {
         }
 
         public void ApresentarRelatorioInscritosPorEvento() {
-            view.MostrarListaEventos(model.ListarEventos());
+            List<Evento> listaEventos = model.ListarEventos();
+            view.MostrarListaEventos(listaEventos);
 
-            view.SolicitarIdEvento();
-
-            int idEvento;
-            if (!int.TryParse(Console.ReadLine(), out idEvento)) {
-                view.MostrarMensagem("Introduza um ID válido ou 0 para sair.");
-                return;
-            }
-
-            if (idEvento == 0) {
+            int? idEvento = LerIdEventoValidoOuSair(listaEventos);
+            if (idEvento == null)
+            {
                 view.MostrarMensagem("Operacao cancelada.");
                 return;
             }
 
-            if (idEvento < 0) {
-                view.MostrarMensagem("Introduza um ID válido ou 0 para sair.");
-                return;
-            }
-
-            if (!model.EventoExiste(idEvento)) {
-                view.MostrarMensagem("Evento nao encontrado.");
-                return;
-            }
-
-            SelecionarEvento(idEvento);
+            SelecionarEvento(idEvento.Value);
         }
 
         public void SelecionarEvento(int idEvento) {
             DadosRelatorio dadosRelatorio = model.ListarInscritosPorEvento(idEvento);
             DocumentoPdf relatorioPdf = model.ObterUltimoRelatorioGerado();
             view.ApresentarRelatorioEPdf(dadosRelatorio, relatorioPdf);
+        }
+
+        private int? LerIdEventoValidoOuSair(List<Evento> listaEventos)
+        {
+            while (true)
+            {
+                view.SolicitarIdEvento();
+                string entrada = Console.ReadLine() ?? string.Empty;
+
+                if (!int.TryParse(entrada, out int idEvento) || idEvento < 0)
+                {
+                    view.MostrarMensagem("Opcao invalida.");
+                    continue;
+                }
+
+                if (idEvento == 0)
+                {
+                    return null;
+                }
+
+                if (!EventoExisteNaLista(listaEventos, idEvento))
+                {
+                    view.MostrarMensagem("ID invalido.");
+                    continue;
+                }
+
+                return idEvento;
+            }
+        }
+
+        private bool EventoExisteNaLista(List<Evento> listaEventos, int idEvento)
+        {
+            foreach (Evento evento in listaEventos)
+            {
+                if (evento.Id == idEvento)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public void ApresentarRelatorioEventosComOcupacao() {

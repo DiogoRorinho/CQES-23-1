@@ -84,22 +84,10 @@ namespace GestorEventos.Eventos {
             }
 
             view.MostrarListaEventos(eventosAtivos);
-            view.SolicitarIdEventoAlteracao();
-
-            int idEvento;
-            if (!int.TryParse(LerEntrada(), out idEvento) || idEvento < 0) {
-                view.MostrarMensagem(MensagemIdInvalidoOuSaida);
-                return;
-            }
-
-            if (idEvento == 0) {
-                view.MostrarMensagem("Alteracao de evento cancelada.");
-                return;
-            }
-
-            Evento? evento = EncontrarEventoPorId(eventosAtivos, idEvento);
+            
+            Evento? evento = LerEventoAtivoValidoOuSair(eventosAtivos, view.SolicitarIdEventoAlteracao);
             if (evento == null) {
-                view.MostrarMensagem(MensagemIdInvalidoOuSaida);
+                view.MostrarMensagem("Alteracao de evento cancelada.");
                 return;
             }
 
@@ -107,7 +95,7 @@ namespace GestorEventos.Eventos {
 
             DadosEvento dados = RecolherDadosAlteracaoEvento(evento);
 
-            ResultadoOperacaoEvento resultado = model.AlterarEvento(idEvento, dados);
+            ResultadoOperacaoEvento resultado = model.AlterarEvento(evento.Id, dados);
             view.MostrarResultadoOperacao(resultado.Mensagem);
         }
 
@@ -119,26 +107,14 @@ namespace GestorEventos.Eventos {
             }
 
             view.MostrarListaEventos(eventosAtivos);
-            view.SolicitarIdEventoCancelamento();
 
-            int idEvento;
-            if (!int.TryParse(LerEntrada(), out idEvento) || idEvento < 0) {
-                view.MostrarMensagem(MensagemIdInvalidoOuSaida);
-                return;
-            }
-
-            if (idEvento == 0) {
-                view.MostrarMensagem("Cancelamento de evento cancelado.");
-                return;
-            }
-
-            Evento? evento = EncontrarEventoPorId(eventosAtivos, idEvento);
+            Evento? evento = LerEventoAtivoValidoOuSair(eventosAtivos, view.SolicitarIdEventoAlteracao);
             if (evento == null) {
-                view.MostrarMensagem(MensagemIdInvalidoOuSaida);
+                view.MostrarMensagem("Alteracao de evento cancelada.");
                 return;
             }
 
-            view.MostrarDadosParaEdicao(evento);
+            view.MostrarDadosParaCancelamento(evento);      // Não imprime "Prima Enter para manter o valor atual."
             view.PedirConfirmacaoCancelamento();
 
             string confirmacao = NormalizarOpcao(LerEntrada());
@@ -147,8 +123,37 @@ namespace GestorEventos.Eventos {
                 return;
             }
 
-            ResultadoOperacaoEvento resultado = model.CancelarEvento(idEvento);
+            ResultadoOperacaoEvento resultado = model.CancelarEvento(evento.Id);
             view.MostrarResultadoOperacao(resultado.Mensagem);
+        }
+
+        private Evento? LerEventoAtivoValidoOuSair(List<Evento> eventosAtivos, Action solicitarId)
+        {
+            while (true)
+            {
+                solicitarId();
+                string entrada = LerEntrada();
+
+                if (!int.TryParse(entrada, out int idEvento) || idEvento < 0)
+                {
+                    view.MostrarMensagem("Opcao invalida.");
+                    continue;
+                }
+
+                if (idEvento == 0)
+                {
+                    return null;
+                }
+
+                Evento? evento = EncontrarEventoPorId(eventosAtivos, idEvento);
+                if (evento == null)
+                {
+                    view.MostrarMensagem("ID invalido.");
+                    continue;
+                }
+
+                return evento;
+            }
         }
 
         private static Evento? EncontrarEventoPorId(List<Evento> eventos, int idEvento) {

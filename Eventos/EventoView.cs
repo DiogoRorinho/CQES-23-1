@@ -94,7 +94,17 @@ namespace GestorEventos.Eventos {
                 dadosEvento.Capacidade));
             Console.WriteLine("Prima Enter para manter o valor atual.");
         }
-
+        public void MostrarDadosParaCancelamento(Evento dadosEvento) {
+                    Console.WriteLine();
+                    Console.WriteLine(string.Format(
+                        "Evento selecionado: {0} - {1} | {2:dd/MM/yyyy} | {3} | capacidade: {4}",
+                        dadosEvento.Id,
+                        dadosEvento.Nome,
+                        dadosEvento.Data,
+                        dadosEvento.Local,
+                        dadosEvento.Capacidade));
+        }
+        
         public void MostrarResultadoOperacao(string mensagem) {
             Console.WriteLine(mensagem);
         }
