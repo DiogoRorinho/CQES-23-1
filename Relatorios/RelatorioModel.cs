@@ -93,12 +93,16 @@ namespace GestorEventos.Relatorios {
 
         public DadosRelatorio ObterDadosRelatorioOcupacaoEGerarPdf() {
             AtualizarEstados();
-            string conteudo = ConstruirConteudoOcupacao();
-            ultimoRelatorioGerado = CriarDocumentoPdf("Eventos com ocupacao", "relatorio-ocupacao.pdf");
+            const string titulo = "Eventos com ocupacao";
+            DateTime dataGeracao = DateTime.Now;
+            string conteudo = ConstruirConteudoOcupacao(dataGeracao);
+            ultimoRelatorioGerado = CriarDocumentoPdf(
+                titulo,
+                string.Format("relatorio-ocupacao-{0:yyyyMMdd-HHmmss}.pdf", dataGeracao));
             GerarFicheiroPdf(ultimoRelatorioGerado, conteudo);
 
             return new DadosRelatorio {
-                Titulo = "Eventos com ocupacao",
+                Titulo = titulo,
                 Conteudo = conteudo
             };
         }
@@ -143,6 +147,24 @@ namespace GestorEventos.Relatorios {
             }
 
             return null;
+        }
+
+        private List<Evento> ObterListaEventosOrdenadosPorId() {
+            List<Evento> eventos = new List<Evento>();
+
+            using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
+            using SqliteCommand comando = new SqliteCommand(
+                @"SELECT id, nome, local, data, estado, capacidade
+                  FROM eventos
+                  ORDER BY id;",
+                ligacao);
+            using SqliteDataReader leitor = comando.ExecuteReader();
+
+            while (leitor.Read()) {
+                eventos.Add(LerEvento(leitor));
+            }
+
+            return eventos;
         }
 
         private List<Inscricao> ObterInscricoesPorEvento(int idEvento) {
@@ -219,31 +241,90 @@ namespace GestorEventos.Relatorios {
             return conteudo.ToString();
         }
 
-        private string ConstruirConteudoOcupacao() {
+        private string ConstruirConteudoOcupacao(DateTime dataGeracao) {
             StringBuilder conteudo = new StringBuilder();
+            const string formatoTabela = "{0,4} | {1,-24} | {2,-16} | {3,-10} | {4,-10} | {5,10} | {6,9} | {7,9}";
 
-            foreach (Evento evento in ObterListaEventos()) {
-                int totalInscricoesAtivas = 0;
+            conteudo.AppendLine(string.Format("Gerado em {0:dd/MM/yyyy HH:mm}", dataGeracao));
+            conteudo.AppendLine();
+            conteudo.AppendLine(string.Format(
+                formatoTabela,
+                "ID",
+                "Nome",
+                "Local",
+                "Data",
+                "Estado",
+                "Capacidade",
+                "Inscritos",
+                "Ocupacao"));
+            conteudo.AppendLine(new string('-', 113));
 
-                foreach (Inscricao inscricao in ObterInscricoesPorEvento(evento.Id)) {
-                    if (inscricao.Estado == "ativa") {
-                        totalInscricoesAtivas += inscricao.Quantidade;
-                    }
-                }
+            foreach (Evento evento in ObterListaEventosOrdenadosPorId()) {
+                int totalInscricoesOcupacao = SomarInscricoesParaOcupacao(evento, ObterInscricoesPorEvento(evento.Id));
 
                 decimal percentagem = evento.Capacidade == 0
                     ? 0
-                    : (decimal)totalInscricoesAtivas / evento.Capacidade * 100;
+                    : (decimal)totalInscricoesOcupacao / evento.Capacidade * 100;
 
                 conteudo.AppendLine(string.Format(
-                    "{0}: {1}/{2} vagas ocupadas ({3:0.##}%)",
-                    evento.Nome,
-                    totalInscricoesAtivas,
+                    formatoTabela,
+                    evento.Id,
+                    LimitarTexto(evento.Nome, 24),
+                    LimitarTexto(evento.Local, 16),
+                    evento.Data.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture),
+                    FormatarEstado(evento.Estado),
                     evento.Capacidade,
-                    percentagem));
+                    totalInscricoesOcupacao,
+                    string.Format("{0:0.##}%", percentagem)));
             }
 
             return conteudo.ToString();
+        }
+
+        private int SomarInscricoesParaOcupacao(Evento evento, List<Inscricao> inscricoes) {
+            string estadoInscricaoConsiderado = ObterEstadoInscricaoConsideradoNaOcupacao(evento.Estado);
+
+            if (string.IsNullOrWhiteSpace(estadoInscricaoConsiderado)) {
+                return 0;
+            }
+
+            int total = 0;
+
+            foreach (Inscricao inscricao in inscricoes) {
+                if (string.Equals(inscricao.Estado, estadoInscricaoConsiderado, StringComparison.OrdinalIgnoreCase)) {
+                    total += inscricao.Quantidade;
+                }
+            }
+
+            return total;
+        }
+
+        private string ObterEstadoInscricaoConsideradoNaOcupacao(string estadoEvento) {
+            string estadoNormalizado = (estadoEvento ?? string.Empty).Trim().ToLowerInvariant();
+
+            if (estadoNormalizado == "ativo") {
+                return "ativa";
+            }
+
+            if (estadoNormalizado == "terminado") {
+                return "terminada";
+            }
+
+            return string.Empty;
+        }
+
+        private string LimitarTexto(string texto, int tamanhoMaximo) {
+            string textoSeguro = texto ?? string.Empty;
+
+            if (textoSeguro.Length <= tamanhoMaximo) {
+                return textoSeguro;
+            }
+
+            if (tamanhoMaximo <= 3) {
+                return textoSeguro.Substring(0, tamanhoMaximo);
+            }
+
+            return textoSeguro.Substring(0, tamanhoMaximo - 3) + "...";
         }
 
         private int SomarQuantidadeInscricoes(List<Inscricao> inscricoes) {
@@ -460,20 +541,16 @@ namespace GestorEventos.Relatorios {
             }
 
             string[] partes = linha.Split('|');
-            if (partes.Length < 5) {
+            int indiceCampoEstado = ObterIndiceCampoEstado(partes);
+            if (indiceCampoEstado < 0) {
                 return false;
             }
 
-            string campoEstado = partes[3];
+            string campoEstado = partes[indiceCampoEstado];
             string estadoLimpo = campoEstado.Trim();
 
-            if (string.Equals(estadoLimpo, "Estado", StringComparison.OrdinalIgnoreCase) ||
-                string.IsNullOrWhiteSpace(estadoLimpo)) {
-                return false;
-            }
-
             int inicioCampoEstado = 0;
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < indiceCampoEstado; i++) {
                 inicioCampoEstado += partes[i].Length + 1;
             }
 
@@ -486,6 +563,31 @@ namespace GestorEventos.Relatorios {
             estadoVermelho = !EstadoAtivo(estadoLimpo);
 
             return true;
+        }
+
+        private int ObterIndiceCampoEstado(string[] partes) {
+            for (int i = 0; i < partes.Length; i++) {
+                if (EstadoConhecido(partes[i].Trim())) {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private bool EstadoConhecido(string estado) {
+            string estadoNormalizado = (estado ?? string.Empty)
+                .Trim()
+                .Replace('_', ' ')
+                .ToLowerInvariant();
+
+            return estadoNormalizado == "ativo" ||
+                estadoNormalizado == "cancelado" ||
+                estadoNormalizado == "terminado" ||
+                estadoNormalizado == "ativa" ||
+                estadoNormalizado == "cancelada" ||
+                estadoNormalizado == "cancelada por evento" ||
+                estadoNormalizado == "terminada";
         }
 
         private string FormatarEstado(string estado) {

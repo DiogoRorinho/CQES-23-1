@@ -103,20 +103,16 @@ namespace GestorEventos.Relatorios {
             }
 
             string[] partes = linha.Split('|');
-            if (partes.Length < 5) {
+            int indiceCampoEstado = ObterIndiceCampoEstado(partes);
+            if (indiceCampoEstado < 0) {
                 return false;
             }
 
-            string campoEstado = partes[3];
+            string campoEstado = partes[indiceCampoEstado];
             string estadoLimpo = campoEstado.Trim();
 
-            if (string.Equals(estadoLimpo, "Estado", StringComparison.OrdinalIgnoreCase) ||
-                string.IsNullOrWhiteSpace(estadoLimpo)) {
-                return false;
-            }
-
             int inicioCampoEstado = 0;
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < indiceCampoEstado; i++) {
                 inicioCampoEstado += partes[i].Length + 1;
             }
 
@@ -129,6 +125,31 @@ namespace GestorEventos.Relatorios {
             estadoVermelho = !EstadoAtivo(estadoLimpo);
 
             return true;
+        }
+
+        private int ObterIndiceCampoEstado(string[] partes) {
+            for (int i = 0; i < partes.Length; i++) {
+                if (EstadoConhecido(partes[i].Trim())) {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private bool EstadoConhecido(string estado) {
+            string estadoNormalizado = (estado ?? string.Empty)
+                .Trim()
+                .Replace('_', ' ')
+                .ToLowerInvariant();
+
+            return estadoNormalizado == "ativo" ||
+                estadoNormalizado == "cancelado" ||
+                estadoNormalizado == "terminado" ||
+                estadoNormalizado == "ativa" ||
+                estadoNormalizado == "cancelada" ||
+                estadoNormalizado == "cancelada por evento" ||
+                estadoNormalizado == "terminada";
         }
 
         private void EscreverEstado(string estado, bool ativo) {
