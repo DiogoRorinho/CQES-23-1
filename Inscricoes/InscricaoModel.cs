@@ -16,8 +16,6 @@ namespace GestorEventos.Inscricoes {
      * Trata regras de negócio, persistência em SQLite, validação de disponibilidade,
      * geração de comprovativos PDF e emissão de eventos de domínio associados às inscrições. */
     class InscricaoModel {
-        private readonly string connectionString;
-        private readonly string pastaPdfs;
         private readonly IAtualizadorEstados atualizadorEstados;
         // Eventos de domínio usados para sinalizar criação, alteração e cancelamento de inscrições.
         public delegate void InscricaoCriadaHandler(object sender, InscricaoCriadaEventArgs e);
@@ -29,8 +27,6 @@ namespace GestorEventos.Inscricoes {
 
         // Construtor que inicializa as configuracoes necessarias para o modelo de inscricao.
         public InscricaoModel() {
-            connectionString = ConfiguracaoAplicacao.ObterConnectionString();
-            pastaPdfs = ConfiguracaoAplicacao.ObterPastaPdfs();
             atualizadorEstados = new AtualizadorEstadosService();
         }
 

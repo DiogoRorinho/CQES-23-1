@@ -16,14 +16,10 @@ namespace GestorEventos.Relatorios {
      * Trata persistência em SQLite, construção do conteúdo tabular, cálculo de ocupação
      * e geração de ficheiros PDF. */
     class RelatorioModel {
-        private readonly string connectionString;
-        private readonly string pastaPdfs;
         private readonly IAtualizadorEstados atualizadorEstados;
         private DocumentoPdf? ultimoRelatorioGerado;
 
         public RelatorioModel() {
-            connectionString = ConfiguracaoAplicacao.ObterConnectionString();
-            pastaPdfs = ConfiguracaoAplicacao.ObterPastaPdfs();
             atualizadorEstados = new AtualizadorEstadosService();
         }
 

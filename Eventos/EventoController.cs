@@ -7,7 +7,6 @@ namespace GestorEventos.Eventos {
     /* Controller responsável por coordenar os fluxos do módulo de Eventos.
      * Gere a navegação do submenu, valida inputs previsíveis e articula a View com o Model. */
     class EventoController {
-        private const string MensagemIdInvalidoOuSaida = "Introduza um ID valido ou 0 para sair.";
         private readonly AplicacaoController aplicacaoController;
         private readonly EventoView view;
         private readonly EventoModel model;

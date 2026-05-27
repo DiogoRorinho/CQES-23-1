@@ -11,7 +11,6 @@ namespace GestorEventos.Eventos {
      * Trata regras de negócio, persistência em SQLite, atualização de estados
      * e emissão de eventos de domínio associados à criação, alteração e cancelamento. */
     class EventoModel : IAtualizadorEstados {
-        private readonly string connectionString;
         private readonly IAtualizadorEstados atualizadorEstados;
         // Eventos de domínio usados para sinalizar alterações relevantes no estado dos eventos.
         public delegate void EventoCanceladoHandler(object sender, EventoCanceladoEventArgs e);
@@ -22,7 +21,6 @@ namespace GestorEventos.Eventos {
         public event EventoAlteradoHandler? EventoAlterado;
 
         public EventoModel() {
-            connectionString = ConfiguracaoAplicacao.ObterConnectionString();
             atualizadorEstados = new AtualizadorEstadosService();
         }
 
@@ -93,7 +91,7 @@ namespace GestorEventos.Eventos {
             comando.CommandText = string.Format(@"
                 SELECT id, nome, local, data, estado, capacidade
                 FROM eventos{0}
-                ORDER BY id;",
+                ORDER BY {1};",
                 string.IsNullOrWhiteSpace(estado) ? string.Empty : " WHERE estado = @estado",
                 ordem);
 
