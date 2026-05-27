@@ -65,11 +65,11 @@ namespace GestorEventos.Inscricoes {
         }
 
         public void SolicitarIdInscricaoAlteracao() {
-            Console.Write("Indique o ID da inscricao a alterar: ");
+            Console.Write("Introduza um ID valido ou 0 para sair: ");
         }
 
         public void SolicitarIdInscricaoCancelamento() {
-            Console.Write("Indique o ID da inscricao a cancelar: ");
+            Console.Write("Introduza um ID valido ou 0 para sair: ");
         }
 
         public void MostrarMensagem(string mensagem) {

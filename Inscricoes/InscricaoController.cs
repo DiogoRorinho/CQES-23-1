@@ -282,7 +282,7 @@ namespace GestorEventos.Inscricoes {
                 string entrada = LerEntrada();
 
                 if (!int.TryParse(entrada, out int idInscricao) || idInscricao < 0) {
-                    view.MostrarMensagem("Opcao invalida.");
+                    view.MostrarMensagem("Introduza um ID valido ou 0 para sair.");
                     continue;
                 }
 
@@ -292,7 +292,7 @@ namespace GestorEventos.Inscricoes {
 
                 Inscricao? inscricao = EncontrarInscricaoPorId(inscricoesAtivas, idInscricao);
                 if (inscricao == null) {
-                    view.MostrarMensagem("ID invalido.");
+                    view.MostrarMensagem("Introduza um ID valido ou 0 para sair.");
                     continue;
                 }
 
