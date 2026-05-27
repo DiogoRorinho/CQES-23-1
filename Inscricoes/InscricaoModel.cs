@@ -677,12 +677,24 @@ namespace GestorEventos.Inscricoes
         // Cria um objeto DocumentoPdf com as informacoes fornecidas, incluindo o titulo, nome do arquivo e caminho completo para onde o arquivo PDF sera salvo
         private DocumentoPdf CriarDocumentoPdf(string titulo, string nomeFicheiro)
         {
+            string nomeFicheiroComDataHora = AcrescentarDataHoraAoNomeFicheiro(nomeFicheiro);
+
             return new DocumentoPdf
             {
                 Titulo = titulo,
-                NomeFicheiro = nomeFicheiro,
-                CaminhoFicheiro = ConfiguracaoAplicacao.CombinarCaminhoPdf(nomeFicheiro)
+                NomeFicheiro = nomeFicheiroComDataHora,
+                CaminhoFicheiro = ConfiguracaoAplicacao.CombinarCaminhoPdf(nomeFicheiroComDataHora)
             };
+        }
+
+        private string AcrescentarDataHoraAoNomeFicheiro(string nomeFicheiro)
+        {
+            string nomeSemExtensao = Path.GetFileNameWithoutExtension(nomeFicheiro);
+            string extensao = Path.GetExtension(nomeFicheiro);
+
+            string dataHora = DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
+
+            return nomeSemExtensao + "_" + dataHora + extensao;
         }
 
         // Constroi o conteudo textual para um bilhete de inscricao, incluindo detalhes do participante, evento e estado da inscricao, formatando as informacoes de maneira clara e organizada para exibicao no PDF
