@@ -34,44 +34,47 @@ namespace GestorEventos.Inscricoes
             atualizadorEstados = new AtualizadorEstadosService();
         }
 
-        // Lista os eventos que possuem vagas disponiveis para inscricao
-        public List<Evento> ListarEventosDisponiveis()
+        // Lista os eventos e a respetiva disponibilidade, calculada pela capacidade menos as inscricoes ativas
+        public List<EventoDisponivel> ListarEventosDisponiveis()
         {
             return ObterEventosComDisponibilidade();
         }
 
-        // Obtem a lista de eventos que ainda possuem vagas disponiveis, considerando as inscricoes ativas
-        public List<Evento> ObterEventosComDisponibilidade()
+        // Obtem a lista de eventos com disponibilidade calculada, mantendo os eventos nao ativos visiveis para a View os assinalar a vermelho
+        public List<EventoDisponivel> ObterEventosComDisponibilidade()
         {
             AtualizarEstados();
-            List<Evento> eventos = new List<Evento>();
+            List<EventoDisponivel> eventos = new List<EventoDisponivel>();
 
             using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
             using SqliteCommand comando = ligacao.CreateCommand();
             comando.CommandText = @"
-                SELECT e.id, e.nome, e.local, e.data, e.estado, e.capacidade
+                SELECT e.id,
+                       e.nome,
+                       e.local,
+                       e.data,
+                       e.estado,
+                       e.capacidade,
+                       CASE
+                           WHEN e.capacidade - COALESCE(SUM(i.quantidade), 0) < 0 THEN 0
+                           ELSE e.capacidade - COALESCE(SUM(i.quantidade), 0)
+                       END AS disponibilidade
                 FROM eventos e
                 LEFT JOIN inscricoes i
                     ON i.id_evento = e.id
                    AND i.estado = 'ativa'
                 WHERE e.estado = 'ativo'
                 GROUP BY e.id, e.nome, e.local, e.data, e.estado, e.capacidade
-                HAVING e.capacidade > COALESCE(SUM(i.quantidade), 0)
-                ORDER BY e.data, e.id;";
+                HAVING e.capacidade - COALESCE(SUM(i.quantidade), 0) > 0
+                ORDER BY e.id;";
 
             using SqliteDataReader leitor = comando.ExecuteReader();
             while (leitor.Read())
             {
-                eventos.Add(MapearEvento(leitor));
+                eventos.Add(MapearEventoDisponivel(leitor));
             }
 
             return eventos;
-        }
-
-        // Verifica se e possivel realizar uma inscricao para um evento especifico, considerando a quantidade desejada
-        public bool VerificarDisponibilidade(int idEvento, int quantidade)
-        {
-            return ValidarDisponibilidade(idEvento, quantidade);
         }
 
         // Valida se existem vagas suficientes para realizar uma inscricao no evento indicado, considerando a quantidade desejada
@@ -178,6 +181,12 @@ namespace GestorEventos.Inscricoes
             return ObterListaInscricoes();
         }
 
+        // Lista apenas as inscricoes ativas, para operacoes de alteracao e cancelamento
+        public List<Inscricao> ListarInscricoesAtivas()
+        {
+            return ObterListaInscricoesAtivas();
+        }
+
         // Obtem a lista completa de inscricoes, incluindo detalhes como participante, evento e estado da inscricao
         public List<Inscricao> ObterListaInscricoes()
         {
@@ -190,6 +199,30 @@ namespace GestorEventos.Inscricoes
                 SELECT id, id_evento, nome_participante, email_participante,
                        idade_participante, quantidade, estado
                 FROM inscricoes
+                ORDER BY id;";
+
+            using SqliteDataReader leitor = comando.ExecuteReader();
+            while (leitor.Read())
+            {
+                inscricoes.Add(MapearInscricao(leitor));
+            }
+
+            return inscricoes;
+        }
+
+        // Obtem a lista de inscricoes ativas, ordenada por ID
+        public List<Inscricao> ObterListaInscricoesAtivas()
+        {
+            AtualizarEstados();
+            List<Inscricao> inscricoes = new List<Inscricao>();
+
+            using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
+            using SqliteCommand comando = ligacao.CreateCommand();
+            comando.CommandText = @"
+                SELECT id, id_evento, nome_participante, email_participante,
+                       idade_participante, quantidade, estado
+                FROM inscricoes
+                WHERE estado = 'ativa'
                 ORDER BY id;";
 
             using SqliteDataReader leitor = comando.ExecuteReader();
@@ -411,22 +444,11 @@ namespace GestorEventos.Inscricoes
             return comprovativo;
         }
 
-        // Exibe o comprovativo de cancelamento para uma inscricao especifica, mostrando os detalhes do cancelamento e do evento associado
-        public string ObterConnectionString()
-        {
-            return connectionString;
-        }
-
-        // Exibe a pasta onde os arquivos PDF gerados est�o armazenados, permitindo que o usu�rio saiba onde encontrar os bilhetes e comprovativos gerados
-        public string ObterPastaPdfs()
-        {
-            return pastaPdfs;
-        }
-
         private void AtualizarEstados()
         {
             atualizadorEstados.AtualizarEstados();
         }
+
 
         private void DispararInscricaoCriada(Inscricao inscricao) {
             InscricaoCriadaEventArgs dados = new InscricaoCriadaEventArgs(
@@ -598,6 +620,21 @@ namespace GestorEventos.Inscricoes
             };
         }
 
+        // Mapeia os dados de um evento com disponibilidade calculada para apresentacao nas listagens de inscricao
+        private EventoDisponivel MapearEventoDisponivel(SqliteDataReader leitor)
+        {
+            return new EventoDisponivel
+            {
+                Id = LerInteiro(leitor, "id"),
+                Nome = LerTexto(leitor, "nome"),
+                Local = LerTexto(leitor, "local"),
+                Data = LerData(leitor, "data"),
+                Estado = LerTexto(leitor, "estado"),
+                Capacidade = LerInteiro(leitor, "capacidade"),
+                Disponibilidade = LerInteiro(leitor, "disponibilidade")
+            };
+        }
+
         // Mapeia os dados de uma inscricao a partir de um leitor de dados SQL, criando um objeto Inscricao com as informacoes correspondentes extraidas do banco de dados
         private Inscricao MapearInscricao(SqliteDataReader leitor)
         {
@@ -638,7 +675,7 @@ namespace GestorEventos.Inscricoes
 
             return Convert.ToString(leitor.GetValue(ordinal), CultureInfo.InvariantCulture) ?? string.Empty;
         }
-        
+
         // Le um valor de data de uma coluna especifica em um leitor de dados SQL, tratando valores nulos e garantindo que o resultado seja uma data valida
         private DateTime LerData(SqliteDataReader leitor, string coluna)
         {
@@ -670,12 +707,24 @@ namespace GestorEventos.Inscricoes
         // Cria um objeto DocumentoPdf com as informacoes fornecidas, incluindo o titulo, nome do arquivo e caminho completo para onde o arquivo PDF sera salvo
         private DocumentoPdf CriarDocumentoPdf(string titulo, string nomeFicheiro)
         {
+            string nomeFicheiroComDataHora = AcrescentarDataHoraAoNomeFicheiro(nomeFicheiro);
+
             return new DocumentoPdf
             {
                 Titulo = titulo,
-                NomeFicheiro = nomeFicheiro,
-                CaminhoFicheiro = ConfiguracaoAplicacao.CombinarCaminhoPdf(nomeFicheiro)
+                NomeFicheiro = nomeFicheiroComDataHora,
+                CaminhoFicheiro = ConfiguracaoAplicacao.CombinarCaminhoPdf(nomeFicheiroComDataHora)
             };
+        }
+
+        private string AcrescentarDataHoraAoNomeFicheiro(string nomeFicheiro)
+        {
+            string nomeSemExtensao = Path.GetFileNameWithoutExtension(nomeFicheiro);
+            string extensao = Path.GetExtension(nomeFicheiro);
+
+            string dataHora = DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
+
+            return nomeSemExtensao + "_" + dataHora + extensao;
         }
 
         // Constroi o conteudo textual para um bilhete de inscricao, incluindo detalhes do participante, evento e estado da inscricao, formatando as informacoes de maneira clara e organizada para exibicao no PDF
@@ -851,5 +900,16 @@ namespace GestorEventos.Inscricoes
 
             return linhas;
         }
+    }
+
+    class EventoDisponivel
+    {
+        public int Id { get; set; }
+        public string Nome { get; set; } = string.Empty;
+        public string Local { get; set; } = string.Empty;
+        public DateTime Data { get; set; }
+        public string Estado { get; set; } = string.Empty;
+        public int Capacidade { get; set; }
+        public int Disponibilidade { get; set; }
     }
 }

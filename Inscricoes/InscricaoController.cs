@@ -12,7 +12,7 @@ namespace GestorEventos.Inscricoes
         private readonly InscricaoModel model;
         private bool regressarMenuPrincipal;
 
-        
+
         public InscricaoController(AplicacaoController aplicacaoController, InscricaoView view, InscricaoModel model)
         {
             this.aplicacaoController = aplicacaoController;
@@ -42,7 +42,7 @@ namespace GestorEventos.Inscricoes
                 }
             }
         }
-        
+
         public bool SelecionarOpcao(string opcao)
         {
             switch (NormalizarOpcao(opcao))
@@ -76,15 +76,22 @@ namespace GestorEventos.Inscricoes
         // Metodo para criar uma nova inscricao, solicitando os dados necessarios e validando as entradas
         private void CriarInscricao()
         {
-            List<Evento> eventosDisponiveis = model.ListarEventosDisponiveis();
+            List<EventoDisponivel> eventosDisponiveis = model.ListarEventosDisponiveis();
 
             if (eventosDisponiveis == null || eventosDisponiveis.Count == 0)
             {
-                view.MostrarMensagem("Nao existem eventos com vagas disponiveis.");
+                view.MostrarMensagem("Nao existem eventos registados.");
                 return;
             }
 
             view.MostrarListaEventos(eventosDisponiveis);
+
+            if (!ExisteEventoDisponivelParaInscricao(eventosDisponiveis))
+            {
+                view.MostrarMensagem("Nao existem eventos ativos com disponibilidade para novas inscricoes.");
+                return;
+            }
+
             view.SolicitarDadosCriacao();
 
             int idEvento = LerIdEventoValido(eventosDisponiveis);
@@ -94,13 +101,24 @@ namespace GestorEventos.Inscricoes
                 return;
             }
 
+            EventoDisponivel? eventoSelecionado = ObterEventoDaLista(eventosDisponiveis, idEvento);
+            if (eventoSelecionado == null)
+            {
+                view.MostrarMensagem("Evento nao encontrado.");
+                return;
+            }
+
+            view.MostrarMensagem("Vagas disponiveis para este evento: " + eventoSelecionado.Disponibilidade);
+
             DadosInscricao dados = new DadosInscricao
             {
-                IdEvento = LerIdEventoValido(eventosDisponiveis),
+                IdEvento = idEvento,
                 NomeParticipante = LerTextoNaoVazio("Nome do inscrito: "),
                 EmailParticipante = LerTextoNaoVazio("Email do inscrito: "),
                 IdadeParticipante = LerInteiroPositivo("Idade do inscrito: "),
-                Quantidade = LerInteiroPositivo("Numero de inscricoes pretendido: ")
+                Quantidade = LerQuantidadeComLimite(
+                    "Numero de inscricoes pretendido: ",
+                    eventoSelecionado.Disponibilidade)
             };
 
             ResultadoCriacaoInscricao resultado = model.CriarInscricao(dados);
@@ -117,67 +135,138 @@ namespace GestorEventos.Inscricoes
         // Metodo para alterar uma inscricao existente, permitindo ao utilizador escolher a inscricao a alterar e os novos dados
         private void AlterarInscricao()
         {
-            List<Inscricao> inscricoes = model.ListarInscricoes();
-            view.MostrarListaInscricoes(inscricoes);
-
-            if (inscricoes == null || inscricoes.Count == 0)
+            List<Inscricao> inscricoesAtivas = model.ListarInscricoesAtivas();
+            if (inscricoesAtivas.Count == 0)
             {
+                view.MostrarMensagem("Nao existem inscricoes ativas para alterar.");
                 return;
             }
 
-            view.SolicitarIdInscricaoAlteracao();
-            int idInscricao = LerInteiroPositivoDaEntrada();
+            view.MostrarListaInscricoes(inscricoesAtivas);
 
-            Inscricao? inscricao = model.ObterInscricao(idInscricao);
-            if (inscricao == null || inscricao.Id <= 0)
-            {
-                view.MostrarMensagem("Inscricao nao encontrada.");
-                return;
-            }
+            Inscricao? inscricao = LerInscricaoAtivaValidaOuSair(
+                inscricoesAtivas,
+                view.SolicitarIdInscricaoAlteracao);
 
-            if (!string.Equals(inscricao.Estado, "ativa", StringComparison.OrdinalIgnoreCase))
+            if (inscricao == null)
             {
-                view.MostrarMensagem("Apenas inscricoes ativas podem ser alteradas.");
+                view.MostrarMensagem("Alteracao de inscricao cancelada.");
                 return;
             }
 
             view.MostrarDadosParaEdicao(inscricao);
-            view.MostrarListaEventos(model.ListarEventosDisponiveis());
-            view.SolicitarDadosEdicao();
 
-            DadosInscricao dados = RecolherDadosAlteracaoInscricao(inscricao);
-            IntroduzirDadosAlterados(idInscricao, dados);
+            int vagasLivresEvento = ObterVagasLivresEvento(inscricao.IdEvento);
+            int limiteQuantidade = vagasLivresEvento + inscricao.Quantidade;
+
+            view.MostrarMensagem("Vagas livres no evento da inscricao: " + vagasLivresEvento);
+            view.MostrarMensagem("Quantidade atual desta inscricao: " + inscricao.Quantidade);
+            view.MostrarMensagem("Quantidade maxima permitida para esta inscricao: " + limiteQuantidade);
+
+            DadosInscricao dados = RecolherDadosAlteracaoInscricao(inscricao, limiteQuantidade);
+
+            if (!model.ValidarAlteracaoInscricao(inscricao.Id, dados))
+            {
+                view.MostrarMensagem("Nao foi possivel alterar a inscricao com os dados indicados.");
+                return;
+            }
+
+            DocumentoPdf bilhetePdf = model.AlterarInscricao(inscricao.Id, dados);
+
+            view.MostrarResultadoOperacaoEBilhete("Inscricao alterada com sucesso.", bilhetePdf);
+        }
+
+        private int ObterVagasLivresEvento(int idEvento)
+        {
+            List<EventoDisponivel> eventosDisponiveis = model.ListarEventosDisponiveis();
+
+            EventoDisponivel? evento = ObterEventoDaLista(eventosDisponiveis, idEvento);
+
+            if (evento == null)
+            {
+                return 0;
+            }
+
+            return evento.Disponibilidade;
+        }
+
+        private int LerQuantidadeComLimite(string pedido, int vagasDisponiveis)
+        {
+            while (true)
+            {
+                view.SolicitarCampoTexto(pedido);
+                string entrada = LerEntrada();
+
+                if (int.TryParse(entrada, out int quantidade) && quantidade > 0)
+                {
+                    if (quantidade <= vagasDisponiveis)
+                    {
+                        return quantidade;
+                    }
+
+                    view.MostrarMensagem("Nao existem vagas suficientes.");
+                    view.MostrarMensagem("Vagas disponiveis para este evento: " + vagasDisponiveis);
+                    view.MostrarMensagem("Introduza uma quantidade entre 1 e " + vagasDisponiveis + ".");
+                    continue;
+                }
+
+                view.MostrarMensagem("Introduza um numero inteiro positivo.");
+            }
+        }
+
+        private int LerQuantidadeAlteravelComLimite(string pedido, int valorAtual, int limiteQuantidade)
+        {
+            while (true)
+            {
+                view.SolicitarCampoTexto(pedido);
+                string entrada = LerEntrada();
+
+                if (string.IsNullOrWhiteSpace(entrada))
+                {
+                    return valorAtual;
+                }
+
+                if (int.TryParse(entrada, out int quantidade) && quantidade > 0)
+                {
+                    if (quantidade <= limiteQuantidade)
+                    {
+                        return quantidade;
+                    }
+
+                    view.MostrarMensagem("Nao existem vagas suficientes.");
+                    view.MostrarMensagem("Quantidade maxima permitida para esta inscricao: " + limiteQuantidade);
+                    view.MostrarMensagem("Introduza uma quantidade entre 1 e " + limiteQuantidade + ".");
+                    continue;
+                }
+
+                view.MostrarMensagem("Introduza um numero inteiro positivo.");
+            }
         }
 
         // Metodo para cancelar uma inscricao existente, permitindo ao utilizador escolher a inscricao a cancelar e confirmando a operacao
         private void CancelarInscricao()
         {
-            List<Inscricao> inscricoes = model.ListarInscricoes();
-            view.MostrarListaInscricoes(inscricoes);
-
-            if (inscricoes == null || inscricoes.Count == 0)
+            List<Inscricao> inscricoesAtivas = model.ListarInscricoesAtivas();
+            if (inscricoesAtivas.Count == 0)
             {
+                view.MostrarMensagem("Nao existem inscricoes ativas para cancelar.");
                 return;
             }
 
-            view.SolicitarIdInscricaoCancelamento();
-            int idInscricao = LerInteiroPositivoDaEntrada();
+            view.MostrarListaInscricoes(inscricoesAtivas);
 
-            Inscricao? inscricao = model.ObterInscricao(idInscricao);
-            if (inscricao == null || inscricao.Id <= 0)
+            Inscricao? inscricao = LerInscricaoAtivaValidaOuSair(
+                inscricoesAtivas,
+                view.SolicitarIdInscricaoCancelamento);
+
+            if (inscricao == null)
             {
-                view.MostrarMensagem("Inscricao nao encontrada.");
+                view.MostrarMensagem("Cancelamento de inscricao cancelado.");
                 return;
             }
 
-            if (!string.Equals(inscricao.Estado, "ativa", StringComparison.OrdinalIgnoreCase))
-            {
-                view.MostrarMensagem("A inscricao selecionada ja nao se encontra ativa.");
-                return;
-            }
-
-            view.MostrarDadosParaEdicao(inscricao);
-            PedirConfirmacaoCancelamento();
+            MostrarDadosCancelamentoInscricao(inscricao);
+            view.PedirConfirmacaoCancelamento();
 
             string confirmacao = NormalizarOpcao(LerEntrada());
             if (confirmacao != "s" && confirmacao != "sim")
@@ -186,7 +275,53 @@ namespace GestorEventos.Inscricoes
                 return;
             }
 
-            ConfirmarCancelamento(idInscricao);
+            model.CancelarInscricao(inscricao.Id);
+
+            DocumentoPdf comprovativo = model.GerarComprovativoCancelamento(inscricao.Id);
+
+            view.MostrarResultadoOperacaoEBilhete("Inscricao cancelada com sucesso.", comprovativo);
+        }
+
+        private Inscricao? LerInscricaoAtivaValidaOuSair(List<Inscricao> inscricoesAtivas, Action solicitarId)
+        {
+            while (true)
+            {
+                solicitarId();
+                string entrada = LerEntrada();
+
+                if (!int.TryParse(entrada, out int idInscricao) || idInscricao < 0)
+                {
+                    view.MostrarMensagem("Opcao invalida.");
+                    continue;
+                }
+
+                if (idInscricao == 0)
+                {
+                    return null;
+                }
+
+                Inscricao? inscricao = EncontrarInscricaoPorId(inscricoesAtivas, idInscricao);
+                if (inscricao == null)
+                {
+                    view.MostrarMensagem("ID invalido.");
+                    continue;
+                }
+
+                return inscricao;
+            }
+        }
+
+        private static Inscricao? EncontrarInscricaoPorId(List<Inscricao> inscricoes, int idInscricao)
+        {
+            foreach (Inscricao inscricao in inscricoes)
+            {
+                if (inscricao.Id == idInscricao)
+                {
+                    return inscricao;
+                }
+            }
+
+            return null;
         }
 
         private void ListarInscricoes()
@@ -195,58 +330,105 @@ namespace GestorEventos.Inscricoes
         }
 
         // Metodo auxiliar para recolher os dados de alteracao de uma inscricao, permitindo ao utilizador manter os valores atuais ou introduzir novos valores
-        private DadosInscricao RecolherDadosAlteracaoInscricao(Inscricao inscricao)
+        private DadosInscricao RecolherDadosAlteracaoInscricao(Inscricao inscricao, int limiteQuantidade)
         {
             return new DadosInscricao
             {
-                IdEvento = LerInteiroPositivoAlteravel(
-                    string.Format("ID do evento [{0}]: ", inscricao.IdEvento),
-                    inscricao.IdEvento),
+                IdEvento = inscricao.IdEvento,
+
                 NomeParticipante = LerTextoAlteravel(
-                    string.Format("Nome do inscrito [{0}]: ", inscricao.NomeParticipante),
+                    "Nome do inscrito (Enter para manter o atual): ",
                     inscricao.NomeParticipante),
+
                 EmailParticipante = LerTextoAlteravel(
-                    string.Format("Email do inscrito [{0}]: ", inscricao.EmailParticipante),
+                    "Email do inscrito (Enter para manter o atual): ",
                     inscricao.EmailParticipante),
+
                 IdadeParticipante = LerInteiroPositivoAlteravel(
-                    string.Format("Idade do inscrito [{0}]: ", inscricao.IdadeParticipante),
+                    "Idade do inscrito (Enter para manter o atual): ",
                     inscricao.IdadeParticipante),
-                Quantidade = LerInteiroPositivoAlteravel(
-                    string.Format("Numero de inscricoes pretendido [{0}]: ", inscricao.Quantidade),
-                    inscricao.Quantidade)
+
+                Quantidade = LerQuantidadeAlteravelComLimite(
+                    "Numero de inscricoes pretendido (Enter para manter o atual): ",
+                    inscricao.Quantidade,
+                    limiteQuantidade)
             };
         }
 
         // Metodo auxiliar para ler um ID de evento valido, verificando se o ID introduzido corresponde a um evento disponivel
-        private int LerIdEventoValido(List<Evento> eventosDisponiveis)
+        private int LerIdEventoValido(List<EventoDisponivel> eventosDisponiveis)
         {
             while (true)
             {
-                view.SolicitarIdEvento();
+                view.SolicitarCampoTexto("ID do evento (0 para sair): ");
                 string entrada = LerEntrada();
 
                 if (!int.TryParse(entrada, out int idEvento) || idEvento < 0)
                 {
-                    view.MostrarMensagem("ID de evento invalido.");
+                    view.MostrarMensagem("Introduza um ID valido ou 0 para sair.");
                     continue;
                 }
 
                 if (idEvento == 0)
                 {
-                    view.MostrarMensagem("Criacao de inscricao cancelada.");
                     return 0;
                 }
 
-                foreach (Evento evento in eventosDisponiveis)
+                EventoDisponivel? eventoEncontrado = ObterEventoDaLista(eventosDisponiveis, idEvento);
+
+                if (eventoEncontrado == null)
                 {
-                    if (evento.Id == idEvento)
-                    {
-                        return idEvento;
-                    }
+                    view.MostrarMensagem("O ID indicado nao corresponde a um evento disponivel.");
+                    continue;
                 }
 
-                view.MostrarMensagem("O ID indicado nao corresponde a um evento disponivel.");
+                if (!EventoPodeReceberInscricao(eventoEncontrado))
+                {
+                    view.MostrarMensagem("O evento indicado nao esta ativo ou nao tem disponibilidade.");
+                    continue;
+                }
+
+                return idEvento;
             }
+        }
+
+        private EventoDisponivel? ObterEventoDaLista(List<EventoDisponivel> eventosDisponiveis, int idEvento)
+        {
+            foreach (EventoDisponivel evento in eventosDisponiveis)
+            {
+                if (evento.Id == idEvento)
+                {
+                    return evento;
+                }
+            }
+
+            return null;
+        }
+
+        private bool ExisteEventoDisponivelParaInscricao(List<EventoDisponivel> eventosDisponiveis)
+        {
+            foreach (EventoDisponivel evento in eventosDisponiveis)
+            {
+                if (EventoPodeReceberInscricao(evento))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool EventoPodeReceberInscricao(EventoDisponivel evento)
+        {
+            return evento != null &&
+                   evento.Disponibilidade > 0 &&
+                   EstadoAtivo(evento.Estado);
+        }
+
+        private bool EstadoAtivo(string estado)
+        {
+            string estadoNormalizado = (estado ?? string.Empty).Trim().ToLowerInvariant();
+            return estadoNormalizado == "ativo" || estadoNormalizado == "ativa";
         }
 
         // Metodo auxiliar para ler um texto nao vazio, solicitando ao utilizador que introduza um valor e validando que o valor nao esta vazio ou composto apenas por espacos
@@ -318,19 +500,6 @@ namespace GestorEventos.Inscricoes
             }
         }
 
-        // Metodo auxiliar para ler um numero inteiro positivo da entrada, validando que o valor introduzido e um numero inteiro positivo, retornando 0 em caso de valor invalido
-        private int LerInteiroPositivoDaEntrada()
-        {
-            string entrada = LerEntrada();
-
-            if (!int.TryParse(entrada, out int valor) || valor <= 0)
-            {
-                return 0;
-            }
-
-            return valor;
-        }
-
         private string LerEntrada()
         {
             return Console.ReadLine() ?? string.Empty;
@@ -353,45 +522,16 @@ namespace GestorEventos.Inscricoes
             aplicacaoController.RegressarMenuPrincipal();
         }
 
-        // Metodo para selecionar uma inscricao existente, verificando se a inscricao existe e esta ativa, e mostrando os dados da inscricao para edicao
-        public void SelecionarInscricao(int idInscricao)
+        private void MostrarDadosCancelamentoInscricao(Inscricao inscricao)
         {
-            Inscricao? inscricao = model.ObterInscricao(idInscricao);
-
-            if (inscricao == null || inscricao.Id <= 0)
-            {
-                view.MostrarMensagem("Inscricao nao encontrada.");
-                return;
-            }
-
-            view.MostrarDadosParaEdicao(inscricao);
-        }
-
-        // Metodo para introduzir os dados alterados de uma inscricao, validando os dados e realizando a alteracao da inscricao, mostrando o resultado da operacao e o bilhete atualizado em caso de sucesso
-        public void IntroduzirDadosAlterados(int idInscricao, DadosInscricao dados)
-        {
-            if (model.ValidarAlteracaoInscricao(idInscricao, dados))
-            {
-                DocumentoPdf bilhetePdf = model.AlterarInscricao(idInscricao, dados);
-                view.MostrarResultadoOperacaoEBilhete("Inscricao alterada com sucesso.", bilhetePdf);
-                return;
-            }
-
-            view.MostrarErroSemVagas();
-        }
-
-        // Metodo para pedir confirmacao de cancelamento de uma inscricao, solicitando ao utilizador que confirme a intencao de cancelar a inscricao selecionada
-        public void PedirConfirmacaoCancelamento()
-        {
-            view.PedirConfirmacaoCancelamento();
-        }
-
-        // Metodo para confirmar o cancelamento de uma inscricao, realizando o cancelamento da inscricao selecionada e mostrando o resultado da operacao e o comprovativo de cancelamento em caso de sucesso
-        public void ConfirmarCancelamento(int idInscricao)
-        {
-            model.CancelarInscricao(idInscricao);
-            DocumentoPdf comprovativo = model.GerarComprovativoCancelamento(idInscricao);
-            view.MostrarResultadoOperacaoEBilhete("Inscricao cancelada com sucesso.", comprovativo);
+            view.MostrarMensagem("Dados da inscricao selecionada:");
+            view.MostrarMensagem("ID: " + inscricao.Id);
+            view.MostrarMensagem("Evento: " + inscricao.IdEvento);
+            view.MostrarMensagem("Nome: " + inscricao.NomeParticipante);
+            view.MostrarMensagem("Email: " + inscricao.EmailParticipante);
+            view.MostrarMensagem("Idade: " + inscricao.IdadeParticipante);
+            view.MostrarMensagem("Quantidade: " + inscricao.Quantidade);
+            view.MostrarMensagem("Estado: " + inscricao.Estado);
         }
     }
 }
