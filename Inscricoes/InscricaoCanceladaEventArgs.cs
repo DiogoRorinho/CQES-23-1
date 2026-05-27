@@ -1,6 +1,7 @@
 using System;
 
 namespace GestorEventos.Inscricoes {
+    // Transporta os dados relevantes do domínio quando uma inscrição é cancelada.
     class InscricaoCanceladaEventArgs : EventArgs {
         public int IdInscricao { get; }
         public string EstadoFinal { get; }

@@ -1,6 +1,7 @@
 using System;
 
 namespace GestorEventos.Inscricoes {
+    // Transporta os dados relevantes do domínio quando uma inscrição é criada.
     class InscricaoCriadaEventArgs : EventArgs {
         public int IdInscricao { get; }
         public int IdEvento { get; }

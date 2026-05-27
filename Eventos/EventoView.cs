@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using GestorEventos.Partilhado;
 
 namespace GestorEventos.Eventos {
+    /* View responsável pela apresentação do módulo de Eventos em consola:
+     * menus, formulários, listagens, mensagens e confirmações. */
     class EventoView {
         public void MostrarMenuEventos() {
             Console.WriteLine();
@@ -40,14 +42,11 @@ namespace GestorEventos.Eventos {
             Console.Write("Introduza um ID valido ou 0 para sair: ");
         }
 
-        public void SolicitarIdEventoCancelamento() {
-            Console.Write("Introduza um ID valido ou 0 para sair: ");
-        }
-
         public void PedirConfirmacaoCancelamento() {
             Console.Write("Confirma o cancelamento do evento? (s/n): ");
         }
 
+        // Apresenta os eventos em formato tabular, destacando a vermelho estados não ativos.
         public void MostrarListaEventos(List<Evento> listaEventos) {
             Console.WriteLine();
             Console.WriteLine("Lista de eventos:");
@@ -83,6 +82,7 @@ namespace GestorEventos.Eventos {
             }
         }
 
+        // Mostra os dados atuais do evento antes da recolha de alterações.
         public void MostrarDadosParaEdicao(Evento dadosEvento) {
             Console.WriteLine();
             Console.WriteLine(string.Format(
@@ -94,6 +94,8 @@ namespace GestorEventos.Eventos {
                 dadosEvento.Capacidade));
             Console.WriteLine("Prima Enter para manter o valor atual.");
         }
+        
+        // Mostra os dados atuais do evento antes da recolha de alterações.
         public void MostrarDadosParaCancelamento(Evento dadosEvento) {
                     Console.WriteLine();
                     Console.WriteLine(string.Format(
@@ -121,6 +123,7 @@ namespace GestorEventos.Eventos {
             Console.WriteLine();
         }
 
+        // Garante alinhamento da tabela em consola, limitando textos longos às larguras previstas.
         private static string LimitarTexto(string texto, int limite) {
             if (string.IsNullOrWhiteSpace(texto)) {
                 return string.Empty;

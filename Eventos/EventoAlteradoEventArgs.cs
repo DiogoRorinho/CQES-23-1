@@ -1,6 +1,7 @@
 using System;
 
 namespace GestorEventos.Eventos {
+    // Transporta os dados relevantes do domínio quando um evento é alterado.
     class EventoAlteradoEventArgs : EventArgs {
         public int IdEvento { get; }
         public string NomeEvento { get; }

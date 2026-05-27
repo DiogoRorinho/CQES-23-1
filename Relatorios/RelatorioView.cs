@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using GestorEventos.Partilhado;
 
 namespace GestorEventos.Relatorios {
+    /* View responsável pela apresentação do módulo de Relatórios em consola, incluindo
+     * menus, seleção de eventos, conteúdo tabular e referência aos PDFs gerados. */
     class RelatorioView {
         public void MostrarMenuRelatorios() {
             Console.WriteLine();
@@ -13,6 +15,7 @@ namespace GestorEventos.Relatorios {
             Console.Write("Escolha uma opcao: ");
         }
 
+        // Apresenta os eventos em formato tabular, destacando a vermelho estados não ativos.
         public void MostrarListaEventos(List<Evento> listaEventos) {
             Console.WriteLine();
             Console.WriteLine("Lista de eventos:");
@@ -44,6 +47,7 @@ namespace GestorEventos.Relatorios {
             Console.Write("Indique o ID do evento (0 para sair): ");
         }
 
+        // Apresenta o conteúdo do relatório na consola e indica o ficheiro PDF gerado.
         public void ApresentarRelatorioEPdf(DadosRelatorio dadosRelatorio, DocumentoPdf relatorioPdf) {
             Console.WriteLine();
             Console.WriteLine(string.Format("Relatorio: {0}", dadosRelatorio.Titulo));
@@ -63,6 +67,8 @@ namespace GestorEventos.Relatorios {
         public void FinalizarOperacaoMenu() {
             Console.WriteLine();
         }
+
+        // Mostra o conteúdo do relatório linha a linha, preservando o destaque visual dos estados.
         private void MostrarConteudoRelatorio(string conteudo) {
             string textoNormalizado = (conteudo ?? string.Empty)
                 .Replace("\r\n", "\n")
@@ -73,6 +79,7 @@ namespace GestorEventos.Relatorios {
             }
         }
 
+        // Trata cada linha do relatório, destacando a vermelho estados não ativos quando presentes.
         private void MostrarLinhaRelatorio(string linha) {
             if (TentarObterSegmentosEstado(linha, out string prefixo, out string estado, out string sufixo, out bool estadoVermelho)) {
                 Console.Write(prefixo);
@@ -80,10 +87,11 @@ namespace GestorEventos.Relatorios {
                 Console.WriteLine(sufixo);
                 return;
             }
-
             Console.WriteLine(linha);
         }
 
+        /* Identifica o segmento correspondente ao estado numa linha textual,
+         * para permitir destaque visual sem perder o alinhamento tabular. */
         private bool TentarObterSegmentosEstado(string linha, out string prefixo, out string estado, out string sufixo, out bool estadoVermelho) {
             prefixo = string.Empty;
             estado = string.Empty;
@@ -133,7 +141,6 @@ namespace GestorEventos.Relatorios {
                     return i;
                 }
             }
-
             return -1;
         }
 
@@ -152,6 +159,7 @@ namespace GestorEventos.Relatorios {
                 estadoNormalizado == "terminada";
         }
 
+        // Escreve o estado com cor diferenciada quando não se trata de um estado ativo.
         private void EscreverEstado(string estado, bool ativo) {
             ConsoleColor corOriginal = Console.ForegroundColor;
 

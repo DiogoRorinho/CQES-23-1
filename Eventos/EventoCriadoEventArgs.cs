@@ -1,6 +1,7 @@
 using System;
 
 namespace GestorEventos.Eventos {
+    // Transporta os dados relevantes do domínio quando um evento é criado.
     class EventoCriadoEventArgs : EventArgs {
         public int IdEvento { get; }
         public string NomeEvento { get; }

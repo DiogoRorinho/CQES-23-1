@@ -4,6 +4,8 @@ using GestorEventos.Aplicacao;
 using GestorEventos.Partilhado;
 
 namespace GestorEventos.Eventos {
+    /* Controller responsável por coordenar os fluxos do módulo de Eventos.
+     * Gere a navegação do submenu, valida inputs previsíveis e articula a View com o Model. */
     class EventoController {
         private const string MensagemIdInvalidoOuSaida = "Introduza um ID valido ou 0 para sair.";
         private readonly AplicacaoController aplicacaoController;
@@ -17,6 +19,7 @@ namespace GestorEventos.Eventos {
             this.model = model;
         }
 
+        // Mantém o submenu de Eventos ativo até o utilizador regressar ao menu principal.
         public void MostrarMenuModulo() {
             regressarMenuPrincipal = false;
 
@@ -67,6 +70,7 @@ namespace GestorEventos.Eventos {
             aplicacaoController.RegressarMenuPrincipal();
         }
 
+        // Coordena o fluxo de criação de evento: recolha de dados, envio ao Model e apresentação do resultado.
         private void CriarEvento() {
             view.SolicitarDadosCriacao();
 
@@ -76,6 +80,7 @@ namespace GestorEventos.Eventos {
             view.MostrarResultadoOperacao(resultado.Mensagem);
         }
 
+        // Lista eventos ativos, valida a escolha do utilizador e coordena a alteração do evento selecionado.
         private void AlterarEvento() {
             List<Evento> eventosAtivos = model.ListarEventosAtivos();
             if (eventosAtivos.Count == 0) {
@@ -99,6 +104,7 @@ namespace GestorEventos.Eventos {
             view.MostrarResultadoOperacao(resultado.Mensagem);
         }
 
+        // Lista eventos ativos, valida a escolha do utilizador e coordena o cancelamento do evento selecionado.
         private void CancelarEvento() {
             List<Evento> eventosAtivos = model.ListarEventosAtivos();
             if (eventosAtivos.Count == 0) {
@@ -114,7 +120,7 @@ namespace GestorEventos.Eventos {
                 return;
             }
 
-            view.MostrarDadosParaCancelamento(evento);      // Não imprime "Prima Enter para manter o valor atual."
+            view.MostrarDadosParaCancelamento(evento);
             view.PedirConfirmacaoCancelamento();
 
             string confirmacao = NormalizarOpcao(LerEntrada());
@@ -127,31 +133,27 @@ namespace GestorEventos.Eventos {
             view.MostrarResultadoOperacao(resultado.Mensagem);
         }
 
-        private Evento? LerEventoAtivoValidoOuSair(List<Evento> eventosAtivos, Action solicitarId)
-        {
-            while (true)
-            {
+        /* Mantém o utilizador num ciclo local de validação até escolher um evento ativo válido
+         * ou introduzir 0 para cancelar a operação. */
+        private Evento? LerEventoAtivoValidoOuSair(List<Evento> eventosAtivos, Action solicitarId) {
+            while (true) {
                 solicitarId();
                 string entrada = LerEntrada();
 
-                if (!int.TryParse(entrada, out int idEvento) || idEvento < 0)
-                {
+                if (!int.TryParse(entrada, out int idEvento) || idEvento < 0) {
                     view.MostrarMensagem("Opcao invalida.");
                     continue;
                 }
 
-                if (idEvento == 0)
-                {
+                if (idEvento == 0) {
                     return null;
                 }
 
                 Evento? evento = EncontrarEventoPorId(eventosAtivos, idEvento);
-                if (evento == null)
-                {
+                if (evento == null) {
                     view.MostrarMensagem("ID invalido.");
                     continue;
                 }
-
                 return evento;
             }
         }
@@ -162,7 +164,6 @@ namespace GestorEventos.Eventos {
                     return evento;
                 }
             }
-
             return null;
         }
 
@@ -170,6 +171,7 @@ namespace GestorEventos.Eventos {
             view.MostrarListaEventos(model.ListarEventos());
         }
 
+        // Recolhe e valida os dados do evento antes de os enviar ao Model.
         private DadosEvento RecolherDadosCriacaoEvento() {
             return new DadosEvento {
                 Nome = LerTextoObrigatorio(view.SolicitarNome),
@@ -179,6 +181,7 @@ namespace GestorEventos.Eventos {
             };
         }
 
+        // Recolhe e valida os dados do evento antes de os enviar ao Model.
         private DadosEvento RecolherDadosAlteracaoEvento(Evento evento) {
             return new DadosEvento {
                 Nome = LerTextoAlteravel(view.SolicitarNome, evento.Nome),
@@ -208,7 +211,6 @@ namespace GestorEventos.Eventos {
             if (string.IsNullOrWhiteSpace(valor)) {
                 return valorAtual;
             }
-
             return valor.Trim();
         }
 

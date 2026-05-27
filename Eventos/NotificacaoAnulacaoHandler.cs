@@ -6,6 +6,8 @@ using GestorEventos.Inscricoes;
 using GestorEventos.Partilhado;
 
 namespace GestorEventos.Eventos {
+    /* Handler responsável por reagir ao cancelamento de eventos,
+     * tratando as inscrições afetadas, gerando comprovativos e registando notificações. */
     class NotificacaoAnulacaoHandler {
         private readonly InscricaoModel inscricaoModel;
         private readonly string pastaNotificacoes;
@@ -16,6 +18,8 @@ namespace GestorEventos.Eventos {
             Directory.CreateDirectory(pastaNotificacoes);
         }
 
+        /* Handler responsável por reagir ao cancelamento de eventos,
+         * tratando as inscrições afetadas, gerando comprovativos e registando notificações. */
         public void OnEventoCancelado(object sender, EventoCanceladoEventArgs e) {
             List<Inscricao> inscritosAfetados = ObterInscritosAfetados(e.IdEvento);
 
@@ -38,6 +42,7 @@ namespace GestorEventos.Eventos {
             return inscricaoModel.GerarComprovativoCancelamento(idInscricao);
         }
 
+        // Regista em ficheiro uma notificação textual de cancelamento para o participante afetado.
         public void EnviarNotificacaoAoParticipante(
             string destinatario,
             DocumentoPdf comprovativo,
@@ -59,6 +64,7 @@ namespace GestorEventos.Eventos {
                 caminhoFicheiro));
         }
 
+        // Adapta o identificador do destinatário para um formato seguro de nome de ficheiro.
         private static string NormalizarParaNomeFicheiro(string valor) {
             if (string.IsNullOrWhiteSpace(valor)) {
                 return "destinatario";
@@ -77,6 +83,7 @@ namespace GestorEventos.Eventos {
             return resultado.Length == 0 ? "destinatario" : resultado.ToString();
         }
 
+        // Constrói o conteúdo da notificação com os dados do evento cancelado e do comprovativo gerado.
         private static string ConstruirConteudoNotificacao(
             string destinatario,
             DocumentoPdf comprovativo,

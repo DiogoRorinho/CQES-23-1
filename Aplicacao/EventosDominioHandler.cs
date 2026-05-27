@@ -6,9 +6,12 @@ using GestorEventos.Inscricoes;
 using GestorEventos.Partilhado.Servicos;
 
 namespace GestorEventos.Aplicacao {
+    /* Handler responsável por registar em ficheiro os principais acontecimentos
+     * de domínio associados a eventos e inscrições. */
     class EventosDominioHandler {
         private readonly string caminhoLog;
 
+        // Prepara a pasta e o ficheiro de log onde serão registadas as notificações do domínio.
         public EventosDominioHandler() {
             string pastaNotificacoes = Path.Combine(AppContext.BaseDirectory, "Notificacoes");
             Directory.CreateDirectory(pastaNotificacoes);
@@ -74,6 +77,7 @@ namespace GestorEventos.Aplicacao {
                 e.EmailParticipante));
         }
 
+        // Acrescenta ao ficheiro de log uma linha com timestamp e descrição do acontecimento.
         private void Registar(string mensagem) {
             string linha = string.Format("{0:yyyy-MM-dd HH:mm:ss} | {1}", DateTime.Now, mensagem);
             File.AppendAllText(caminhoLog, linha + Environment.NewLine, Encoding.UTF8);

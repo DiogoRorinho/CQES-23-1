@@ -1,6 +1,7 @@
 using System;
 
 namespace GestorEventos.Eventos {
+    // Transporta os dados relevantes do domínio quando um evento é cancelado.
     class EventoCanceladoEventArgs : EventArgs {
         public int IdEvento { get; private set; }
         public string NomeEvento { get; private set; }

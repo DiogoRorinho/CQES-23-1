@@ -1,6 +1,7 @@
 using System;
 
 namespace GestorEventos.Partilhado.Servicos {
+    // Transporta os dados relevantes do domínio quando uma inscrição passa automaticamente a terminada.
     public class InscricaoTerminadaEventArgs : EventArgs {
         public int IdInscricao { get; }
         public int IdEvento { get; }

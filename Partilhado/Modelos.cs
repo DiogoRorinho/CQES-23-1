@@ -1,6 +1,9 @@
 using System;
 
+/* Modelos de dados e DTOs partilhados entre os vários módulos da aplicação.
+ * Incluem entidades de domínio, objetos de input/output e estruturas de resultado. */
 namespace GestorEventos.Partilhado {
+    // --- Eventos ---
     class Evento {
         public int Id { get; set; }
         public string Nome { get; set; } = string.Empty;
@@ -22,6 +25,7 @@ namespace GestorEventos.Partilhado {
         public string Mensagem { get; set; } = string.Empty;
     }
 
+    // --- Inscrições ---
     class Inscricao {
         public int Id { get; set; }
         public int IdEvento { get; set; }
@@ -46,6 +50,7 @@ namespace GestorEventos.Partilhado {
         public DocumentoPdf? BilhetePdf { get; set; }
     }
 
+    // --- Relatórios e PDFs ---
     class DadosRelatorio {
         public string Titulo { get; set; } = string.Empty;
         public string Conteudo { get; set; } = string.Empty;

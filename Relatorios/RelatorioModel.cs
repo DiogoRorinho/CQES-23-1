@@ -12,6 +12,9 @@ using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 
 namespace GestorEventos.Relatorios {
+    /* Model responsável pela geração de relatórios sobre eventos e inscrições.
+     * Trata persistência em SQLite, construção do conteúdo tabular, cálculo de ocupação
+     * e geração de ficheiros PDF. */
     class RelatorioModel {
         private readonly string connectionString;
         private readonly string pastaPdfs;
@@ -24,18 +27,15 @@ namespace GestorEventos.Relatorios {
             atualizadorEstados = new AtualizadorEstadosService();
         }
 
+        // Devolve a lista de eventos ordenada por ID para facilitar seleção em relatórios por evento.
         public List<Evento> ListarEventos() {
-            return ObterListaEventosOrdenadosPorId(); //substituída por ObterListaEventosOrdenadosPorID() para garantir ordenação por ID
+            return ObterListaEventosOrdenadosPorId();
         }
 
+        // Constrói os dados do relatório de inscritos para o evento selecionado e gera o PDF correspondente.
         public DadosRelatorio ListarInscritosPorEvento(int idEvento) {
             return ObterDadosRelatorioEGerarPdf(idEvento);
         }
-
-        /*public bool EventoExiste(int idEvento) {
-            AtualizarEstados();
-            return idEvento > 0 && ObterEventoPorId(idEvento) != null;
-        }*/
 
         public DadosRelatorio ObterDadosRelatorioEGerarPdf(int idEvento) {
             AtualizarEstados();
@@ -62,12 +62,11 @@ namespace GestorEventos.Relatorios {
                 GerarFicheiroPdf(ultimoRelatorioGerado, conteudo);
             }
 
-            return new DadosRelatorio {
-                Titulo = titulo,
-                Conteudo = conteudo
-            };
+            return new DadosRelatorio {Titulo = titulo, Conteudo = conteudo};
         }
 
+        /* Constrói o relatório de ocupação dos eventos, considerando o estado adequado das inscrições
+         * para eventos ativos e terminados. */
         public DadosRelatorio ListarEventosComOcupacao() {
             return ObterDadosRelatorioOcupacaoEGerarPdf();
         }
@@ -82,10 +81,7 @@ namespace GestorEventos.Relatorios {
                 string.Format("relatorio-ocupacao-{0:yyyyMMdd-HHmmss}.pdf", dataGeracao));
             GerarFicheiroPdf(ultimoRelatorioGerado, conteudo);
 
-            return new DadosRelatorio {
-                Titulo = titulo,
-                Conteudo = conteudo
-            };
+            return new DadosRelatorio {Titulo = titulo, Conteudo = conteudo};
         }
 
         public DocumentoPdf ObterUltimoRelatorioGerado() {
@@ -118,10 +114,10 @@ namespace GestorEventos.Relatorios {
             if (leitor.Read()) {
                 return LerEvento(leitor);
             }
-
             return null;
         }
 
+        // Obtém da BD os eventos ordenados por ID, melhorando a legibilidade para o utilizador.
         private List<Evento> ObterListaEventosOrdenadosPorId() {
             List<Evento> eventos = new List<Evento>();
 
@@ -136,7 +132,6 @@ namespace GestorEventos.Relatorios {
             while (leitor.Read()) {
                 eventos.Add(LerEvento(leitor));
             }
-
             return eventos;
         }
 
@@ -165,10 +160,10 @@ namespace GestorEventos.Relatorios {
                     Estado = LerTexto(leitor, "estado")
                 });
             }
-
             return inscricoes;
         }
 
+        // Gera o conteúdo textual tabular do relatório de inscritos por evento.
         private string ConstruirConteudoInscritos(Evento? evento, List<Inscricao> inscricoes, DateTime dataGeracao) {
             if (evento == null) {
                 return "Evento nao encontrado.";
@@ -210,10 +205,10 @@ namespace GestorEventos.Relatorios {
                     FormatarEstado(inscricao.Estado),
                     inscricao.Quantidade));
             }
-
             return conteudo.ToString();
         }
 
+        // Gera o conteúdo textual tabular do relatório de ocupação dos eventos.
         private string ConstruirConteudoOcupacao(DateTime dataGeracao) {
             StringBuilder conteudo = new StringBuilder();
             const string formatoTabela = "{0,4} | {1,-24} | {2,-16} | {3,-10} | {4,-10} | {5,10} | {6,9} | {7,9}";
@@ -254,6 +249,8 @@ namespace GestorEventos.Relatorios {
             return conteudo.ToString();
         }
 
+        /* Calcula a ocupação efetiva do evento com base apenas no estado de inscrição
+         * relevante para o estado atual do evento. */
         private int SomarInscricoesParaOcupacao(Evento evento, List<Inscricao> inscricoes) {
             string estadoInscricaoConsiderado = ObterEstadoInscricaoConsideradoNaOcupacao(evento.Estado);
 
@@ -268,10 +265,11 @@ namespace GestorEventos.Relatorios {
                     total += inscricao.Quantidade;
                 }
             }
-
             return total;
         }
 
+        /* Define que estado de inscrição deve ser considerado na ocupação,
+         * distinguindo eventos ativos de eventos terminados. */
         private string ObterEstadoInscricaoConsideradoNaOcupacao(string estadoEvento) {
             string estadoNormalizado = (estadoEvento ?? string.Empty).Trim().ToLowerInvariant();
 
@@ -282,7 +280,6 @@ namespace GestorEventos.Relatorios {
             if (estadoNormalizado == "terminado") {
                 return "terminada";
             }
-
             return string.Empty;
         }
 
@@ -296,7 +293,6 @@ namespace GestorEventos.Relatorios {
             if (tamanhoMaximo <= 3) {
                 return textoSeguro.Substring(0, tamanhoMaximo);
             }
-
             return textoSeguro.Substring(0, tamanhoMaximo - 3) + "...";
         }
 
@@ -306,7 +302,6 @@ namespace GestorEventos.Relatorios {
             foreach (Inscricao inscricao in inscricoes) {
                 total += inscricao.Quantidade;
             }
-
             return total;
         }
 
@@ -327,7 +322,6 @@ namespace GestorEventos.Relatorios {
             if (leitor.IsDBNull(ordinal)) {
                 return 0;
             }
-
             return Convert.ToInt32(leitor.GetValue(ordinal), CultureInfo.InvariantCulture);
         }
 
@@ -337,7 +331,6 @@ namespace GestorEventos.Relatorios {
             if (leitor.IsDBNull(ordinal)) {
                 return string.Empty;
             }
-
             return Convert.ToString(leitor.GetValue(ordinal), CultureInfo.InvariantCulture) ?? string.Empty;
         }
 
@@ -360,10 +353,10 @@ namespace GestorEventos.Relatorios {
                 DateTime.TryParse(texto, CultureInfo.CurrentCulture, DateTimeStyles.None, out data)) {
                 return data;
             }
-
             return DateTime.MinValue;
         }
 
+        // Gera o ficheiro PDF do relatório, aplicando formatação monoespaçada e paginação automática.
         private void GerarFicheiroPdf(DocumentoPdf documentoPdf, string conteudo) {
             string? pastaDestino = Path.GetDirectoryName(documentoPdf.CaminhoFicheiro);
 
@@ -412,11 +405,11 @@ namespace GestorEventos.Relatorios {
 
                 y += alturaLinha;
             }
-
             grafico.Dispose();
             documento.Save(documentoPdf.CaminhoFicheiro);
         }
 
+        // Cria uma nova página A4 em orientação horizontal para acomodar tabelas mais largas.
         private PdfPage CriarPaginaPdf(PdfDocument documento) {
             PdfPage pagina = documento.AddPage();
             pagina.Size = PageSize.A4;
@@ -424,6 +417,7 @@ namespace GestorEventos.Relatorios {
             return pagina;
         }
 
+        // Normaliza o texto e prepara a sua divisão em linhas compatíveis com a largura do PDF.
         private List<string> SepararLinhasPdf(string texto, XGraphics grafico, XFont fonte, double larguraMaxima) {
             List<string> linhas = new List<string>();
             string textoNormalizado = (texto ?? string.Empty)
@@ -433,10 +427,10 @@ namespace GestorEventos.Relatorios {
             foreach (string linhaOriginal in textoNormalizado.Split('\n')) {
                 linhas.AddRange(QuebrarLinhaPdf(linhaOriginal, grafico, fonte, larguraMaxima));
             }
-
             return linhas;
         }
 
+        // Normaliza o texto e prepara a sua divisão em linhas compatíveis com a largura do PDF.
         private void DesenharLinhaPdf(XGraphics grafico, XFont fonte, string linha, double x, double y, double largura, double alturaLinha) {
             if (TentarObterSegmentosEstado(linha, out string prefixo, out string estado, out string sufixo, out bool estadoVermelho)) {
                 XBrush pincelEstado = estadoVermelho ? XBrushes.Red : XBrushes.Black;
@@ -475,6 +469,8 @@ namespace GestorEventos.Relatorios {
                 XStringFormats.TopLeft);
         }
 
+        /* Tenta identificar o segmento correspondente ao estado numa linha textual,
+         * para permitir destaque visual sem perder o restante alinhamento da tabela. */
         private bool TentarObterSegmentosEstado(string linha, out string prefixo, out string estado, out string sufixo, out bool estadoVermelho) {
             prefixo = string.Empty;
             estado = string.Empty;
@@ -518,16 +514,17 @@ namespace GestorEventos.Relatorios {
             return true;
         }
 
+        // Procura a coluna onde se encontra o estado numa linha tabular separada por '|'.
         private int ObterIndiceCampoEstado(string[] partes) {
             for (int i = 0; i < partes.Length; i++) {
                 if (EstadoConhecido(partes[i].Trim())) {
                     return i;
                 }
             }
-
             return -1;
         }
 
+        // Identifica estados reconhecidos da aplicação para efeitos de formatação e destaque visual.
         private bool EstadoConhecido(string estado) {
             string estadoNormalizado = (estado ?? string.Empty)
                 .Trim()
@@ -559,6 +556,7 @@ namespace GestorEventos.Relatorios {
             return estadoNormalizado == "ativo" || estadoNormalizado == "ativa";
         }
 
+        // Identifica estados reconhecidos da aplicação para efeitos de formatação e destaque visual.
         private List<string> QuebrarLinhaPdf(string linhaOriginal, XGraphics grafico, XFont fonte, double larguraMaxima) {
             List<string> linhas = new List<string>();
 
@@ -582,14 +580,12 @@ namespace GestorEventos.Relatorios {
                 if (!string.IsNullOrEmpty(linhaAtual)) {
                     linhas.Add(linhaAtual);
                 }
-
                 linhaAtual = palavra;
             }
 
             if (!string.IsNullOrEmpty(linhaAtual)) {
                 linhas.Add(linhaAtual);
             }
-
             return linhas;
         }
     }

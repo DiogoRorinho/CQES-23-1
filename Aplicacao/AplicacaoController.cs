@@ -5,6 +5,9 @@ using GestorEventos.Partilhado.Servicos;
 using GestorEventos.Relatorios;
 
 namespace GestorEventos.Aplicacao {
+    /* Controller principal da aplicação.
+     * Responsável por inicializar os componentes, interligar handlers/eventos,
+     * apresentar o menu principal e encaminhar o utilizador para os módulos. */
     class AplicacaoController {
         private readonly MenuPrincipalView menuPrincipalView;
         private readonly EventoController eventoController;
@@ -12,6 +15,8 @@ namespace GestorEventos.Aplicacao {
         private readonly RelatorioController relatorioController;
         private bool programaAtivo;
 
+        /* Inicialização das dependências e subscrição dos eventos/handlers
+         * necessários ao arranque e ao registo de acontecimentos do domínio. */
         public AplicacaoController() {
             menuPrincipalView = new MenuPrincipalView();
 
@@ -36,6 +41,7 @@ namespace GestorEventos.Aplicacao {
             AtualizadorEstadosService.EventoTerminado += eventosDominioHandler.OnEventoTerminado;
             AtualizadorEstadosService.InscricaoTerminada += eventosDominioHandler.OnInscricaoTerminada;
 
+            // Garante a coerência inicial dos estados na BD antes da utilização da aplicação.
             eventoModel.AtualizarEstados();
             
             eventoController = new EventoController(this, eventoView, eventoModel);
@@ -63,16 +69,16 @@ namespace GestorEventos.Aplicacao {
 
         public void SelecionarOpcao(string? opcao) {
             switch (NormalizarOpcao(opcao)) {
-                case "1":                // case "Eventos"
+                case "1":
                     eventoController.MostrarMenuModulo();
                     break;
-                case "2":                // case "Inscricoes"
+                case "2":
                     inscricaoController.MostrarMenuModulo();
                     break;
-                case "3":                // case "Relatorios"
+                case "3":
                     relatorioController.MostrarMenuModulo();
                     break;
-                case "0":                // case "Terminar"
+                case "0":
                     TerminarPrograma();
                     break;
                 default:
