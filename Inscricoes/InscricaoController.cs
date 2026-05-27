@@ -70,7 +70,7 @@ namespace GestorEventos.Inscricoes {
             List<EventoDisponivel> eventosDisponiveis = model.ListarEventosDisponiveis();
 
             if (eventosDisponiveis == null || eventosDisponiveis.Count == 0) {
-                view.MostrarMensagem("Nao existem eventos registados.");
+                view.MostrarMensagem("Nao existem eventos ativos registados.");
                 return;
             }
 
@@ -145,6 +145,12 @@ namespace GestorEventos.Inscricoes {
             if (inscricoesAtivas.Count == 0) {
                 view.MostrarMensagem("Nao existem inscricoes ativas para alterar.");
                 return;
+            }
+
+            List<EventoDisponivel> eventosDisponiveis = model.ListarEventosDisponiveis();
+            if (eventosDisponiveis.Count > 0) {
+                view.MostrarMensagem("Eventos ativos e vagas disponiveis:");
+                view.MostrarListaEventos(eventosDisponiveis);
             }
 
             view.MostrarListaInscricoes(inscricoesAtivas);

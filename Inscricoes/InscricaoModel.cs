@@ -34,13 +34,13 @@ namespace GestorEventos.Inscricoes {
             atualizadorEstados = new AtualizadorEstadosService();
         }
 
-        // Devolve os eventos elegíveis para inscrição, já com disponibilidade calculada.
+        // Devolve os eventos ativos, já com disponibilidade calculada.
         public List<EventoDisponivel> ListarEventosDisponiveis() {
             return ObterEventosComDisponibilidade();
         }
 
         /* Obtém da BD os eventos ativos e calcula a disponibilidade a partir da capacidade
-         * e do número de inscrições ativas já registadas. */
+         * e do número de inscrições ativas já registadas, incluindo eventos sem vagas livres. */
         public List<EventoDisponivel> ObterEventosComDisponibilidade() {
             AtualizarEstados();
             List<EventoDisponivel> eventos = new List<EventoDisponivel>();
@@ -64,7 +64,6 @@ namespace GestorEventos.Inscricoes {
                    AND i.estado = 'ativa'
                 WHERE e.estado = 'ativo'
                 GROUP BY e.id, e.nome, e.local, e.data, e.estado, e.capacidade
-                HAVING e.capacidade - COALESCE(SUM(i.quantidade), 0) > 0
                 ORDER BY e.id;";
 
             using SqliteDataReader leitor = comando.ExecuteReader();
