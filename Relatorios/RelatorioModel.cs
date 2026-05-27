@@ -25,36 +25,17 @@ namespace GestorEventos.Relatorios {
         }
 
         public List<Evento> ListarEventos() {
-            return ObterListaEventos();
-        }
-
-        public List<Evento> ObterListaEventos() {
-            AtualizarEstados();
-            List<Evento> eventos = new List<Evento>();
-
-            using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
-            using SqliteCommand comando = new SqliteCommand(
-                @"SELECT id, nome, local, data, estado, capacidade
-                  FROM eventos
-                  ORDER BY data, nome;",
-                ligacao);
-            using SqliteDataReader leitor = comando.ExecuteReader();
-
-            while (leitor.Read()) {
-                eventos.Add(LerEvento(leitor));
-            }
-
-            return eventos;
+            return ObterListaEventosOrdenadosPorId(); //substituída por ObterListaEventosOrdenadosPorID() para garantir ordenação por ID
         }
 
         public DadosRelatorio ListarInscritosPorEvento(int idEvento) {
             return ObterDadosRelatorioEGerarPdf(idEvento);
         }
 
-        public bool EventoExiste(int idEvento) {
+        /*public bool EventoExiste(int idEvento) {
             AtualizarEstados();
             return idEvento > 0 && ObterEventoPorId(idEvento) != null;
-        }
+        }*/
 
         public DadosRelatorio ObterDadosRelatorioEGerarPdf(int idEvento) {
             AtualizarEstados();
@@ -109,14 +90,6 @@ namespace GestorEventos.Relatorios {
 
         public DocumentoPdf ObterUltimoRelatorioGerado() {
             return ultimoRelatorioGerado ?? CriarDocumentoPdf("Relatorio", "relatorio.pdf");
-        }
-
-        public string ObterConnectionString() {
-            return connectionString;
-        }
-
-        public string ObterPastaPdfs() {
-            return pastaPdfs;
         }
 
         private void AtualizarEstados() {
@@ -337,26 +310,6 @@ namespace GestorEventos.Relatorios {
             return total;
         }
 
-        private SqliteConnection CriarLigacao() {
-            if (string.IsNullOrWhiteSpace(connectionString)) {
-                throw new InvalidOperationException("Connection string da base de dados nao configurada.");
-            }
-
-            string connectionStringResolvida = ResolverDataDirectory(connectionString);
-
-            return new SqliteConnection(connectionStringResolvida);
-        }
-
-        private string ResolverDataDirectory(string textoConnectionString) {
-            string? dataDirectory = Convert.ToString(AppDomain.CurrentDomain.GetData("DataDirectory"));
-
-            if (string.IsNullOrWhiteSpace(dataDirectory)) {
-                dataDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            }
-
-            return textoConnectionString.Replace("|DataDirectory|", dataDirectory);
-        }
-
         private Evento LerEvento(SqliteDataReader leitor) {
             return new Evento {
                 Id = LerInteiro(leitor, "id"),
@@ -423,8 +376,8 @@ namespace GestorEventos.Relatorios {
 
             PdfPage pagina = CriarPaginaPdf(documento);
             XGraphics grafico = XGraphics.FromPdfPage(pagina);
-            XFont fonteTitulo = new XFont("Arial", 16, XFontStyleEx.Bold);
-            XFont fonteCorpo = new XFont("Arial", 9, XFontStyleEx.Regular);
+            XFont fonteTitulo = new XFont("Courier New", 16, XFontStyleEx.Bold);
+            XFont fonteCorpo = new XFont("Courier", 9, XFontStyleEx.Regular);
 
             const double margem = 40;
             const double alturaLinha = 14;
@@ -467,7 +420,7 @@ namespace GestorEventos.Relatorios {
         private PdfPage CriarPaginaPdf(PdfDocument documento) {
             PdfPage pagina = documento.AddPage();
             pagina.Size = PageSize.A4;
-            pagina.Orientation = PageOrientation.Portrait;
+            pagina.Orientation = PageOrientation.Landscape;
             return pagina;
         }
 
@@ -606,7 +559,7 @@ namespace GestorEventos.Relatorios {
             return estadoNormalizado == "ativo" || estadoNormalizado == "ativa";
         }
 
-                private List<string> QuebrarLinhaPdf(string linhaOriginal, XGraphics grafico, XFont fonte, double larguraMaxima) {
+        private List<string> QuebrarLinhaPdf(string linhaOriginal, XGraphics grafico, XFont fonte, double larguraMaxima) {
             List<string> linhas = new List<string>();
 
             if (string.IsNullOrWhiteSpace(linhaOriginal)) {
