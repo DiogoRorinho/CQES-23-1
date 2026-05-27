@@ -70,12 +70,6 @@ namespace GestorEventos.Inscricoes
             return eventos;
         }
 
-        // Verifica se e possivel realizar uma inscricao para um evento especifico, considerando a quantidade desejada
-        public bool VerificarDisponibilidade(int idEvento, int quantidade)
-        {
-            return ValidarDisponibilidade(idEvento, quantidade);
-        }
-
         // Valida se existem vagas suficientes para realizar uma inscricao no evento indicado, considerando a quantidade desejada
         public bool ValidarDisponibilidade(int idEvento, int quantidade)
         {
@@ -433,18 +427,6 @@ namespace GestorEventos.Inscricoes
 
             GerarFicheiroPdf(comprovativo, ConstruirConteudoCancelamento(inscricao, evento));
             return comprovativo;
-        }
-
-        // Exibe o comprovativo de cancelamento para uma inscricao especifica, mostrando os detalhes do cancelamento e do evento associado
-        public string ObterConnectionString()
-        {
-            return connectionString;
-        }
-
-        // Exibe a pasta onde os arquivos PDF gerados est�o armazenados, permitindo que o usu�rio saiba onde encontrar os bilhetes e comprovativos gerados
-        public string ObterPastaPdfs()
-        {
-            return pastaPdfs;
         }
 
         private void AtualizarEstados()

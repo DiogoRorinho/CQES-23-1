@@ -133,7 +133,6 @@ namespace GestorEventos.Inscricoes
         }
 
         // Metodo para alterar uma inscricao existente, permitindo ao utilizador escolher a inscricao a alterar e os novos dados
-
         private void AlterarInscricao()
         {
             List<Inscricao> inscricoesAtivas = model.ListarInscricoesAtivas();
@@ -393,67 +392,6 @@ namespace GestorEventos.Inscricoes
             }
         }
 
-        // Metodo auxiliar para ler um ID de evento alteravel, permitindo manter o valor atual com Enter
-        /*private int LerIdEventoValidoAlteravel(
-           string pedido,
-           int valorAtual,
-           List<EventoDisponivel> eventosDisponiveis)
-        {
-            while (true)
-            {
-                view.SolicitarCampoTexto(pedido);
-                string entrada = LerEntrada();
-
-                if (string.IsNullOrWhiteSpace(entrada))
-                {
-                    return valorAtual;
-                }
-
-                if (!int.TryParse(entrada, out int idEvento) || idEvento <= 0)
-                {
-                    view.MostrarMensagem("ID de evento invalido.");
-                    continue;
-                }
-
-                if (idEvento == valorAtual)
-                {
-                    return valorAtual;
-                }
-
-                EventoDisponivel? eventoEncontrado = ObterEventoDaLista(eventosDisponiveis, idEvento);
-
-                if (eventoEncontrado == null)
-                {
-                    view.MostrarMensagem("O ID indicado nao corresponde a um evento disponivel.");
-                    continue;
-                }
-
-                if (!EventoPodeReceberInscricao(eventoEncontrado))
-                {
-                    view.MostrarMensagem("O evento indicado nao esta ativo ou nao tem disponibilidade.");
-                    continue;
-                }
-
-                return idEvento;
-            }
-        }*/
-
-
-        private static EventoDisponivel? EncontrarEventoDisponivelPorId( List<EventoDisponivel> eventos,int idEvento)
-        {
-            foreach (EventoDisponivel evento in eventos)
-             {
-                if (evento.Id == idEvento)
-                {
-                   return evento;
-                }
-            }
-
-            return null;
-        }
-
-
-
         private EventoDisponivel? ObterEventoDaLista(List<EventoDisponivel> eventosDisponiveis, int idEvento)
         {
             foreach (EventoDisponivel evento in eventosDisponiveis)
@@ -562,19 +500,6 @@ namespace GestorEventos.Inscricoes
             }
         }
 
-        // Metodo auxiliar para ler um numero inteiro positivo da entrada, validando que o valor introduzido e um numero inteiro positivo, retornando 0 em caso de valor invalido
-        private int LerInteiroPositivoDaEntrada()
-        {
-            string entrada = LerEntrada();
-
-            if (!int.TryParse(entrada, out int valor) || valor <= 0)
-            {
-                return 0;
-            }
-
-            return valor;
-        }
-
         private string LerEntrada()
         {
             return Console.ReadLine() ?? string.Empty;
@@ -597,20 +522,6 @@ namespace GestorEventos.Inscricoes
             aplicacaoController.RegressarMenuPrincipal();
         }
 
-        // Metodo para selecionar uma inscricao existente, verificando se a inscricao existe e esta ativa, e mostrando os dados da inscricao para edicao
-        public void SelecionarInscricao(int idInscricao)
-        {
-            Inscricao? inscricao = model.ObterInscricao(idInscricao);
-
-            if (inscricao == null || inscricao.Id <= 0)
-            {
-                view.MostrarMensagem("Inscricao nao encontrada.");
-                return;
-            }
-
-            view.MostrarDadosParaEdicao(inscricao);
-        }
-
         private void MostrarDadosCancelamentoInscricao(Inscricao inscricao)
         {
             view.MostrarMensagem("Dados da inscricao selecionada:");
@@ -621,33 +532,6 @@ namespace GestorEventos.Inscricoes
             view.MostrarMensagem("Idade: " + inscricao.IdadeParticipante);
             view.MostrarMensagem("Quantidade: " + inscricao.Quantidade);
             view.MostrarMensagem("Estado: " + inscricao.Estado);
-        }
-
-        // Metodo para introduzir os dados alterados de uma inscricao, validando os dados e realizando a alteracao da inscricao, mostrando o resultado da operacao e o bilhete atualizado em caso de sucesso
-        public void IntroduzirDadosAlterados(int idInscricao, DadosInscricao dados)
-        {
-            if (model.ValidarAlteracaoInscricao(idInscricao, dados))
-            {
-                DocumentoPdf bilhetePdf = model.AlterarInscricao(idInscricao, dados);
-                view.MostrarResultadoOperacaoEBilhete("Inscricao alterada com sucesso.", bilhetePdf);
-                return;
-            }
-
-            view.MostrarErroSemVagas();
-        }
-
-        // Metodo para pedir confirmacao de cancelamento de uma inscricao, solicitando ao utilizador que confirme a intencao de cancelar a inscricao selecionada
-        public void PedirConfirmacaoCancelamento()
-        {
-            view.PedirConfirmacaoCancelamento();
-        }
-
-        // Metodo para confirmar o cancelamento de uma inscricao, realizando o cancelamento da inscricao selecionada e mostrando o resultado da operacao e o comprovativo de cancelamento em caso de sucesso
-        public void ConfirmarCancelamento(int idInscricao)
-        {
-            model.CancelarInscricao(idInscricao);
-            DocumentoPdf comprovativo = model.GerarComprovativoCancelamento(idInscricao);
-            view.MostrarResultadoOperacaoEBilhete("Inscricao cancelada com sucesso.", comprovativo);
         }
     }
 }

@@ -60,12 +60,6 @@ namespace GestorEventos.Inscricoes
             }
         }
 
-        // Solicita o ID do evento para criar ou alterar uma inscricao
-        public void SolicitarIdEvento()
-        {
-            Console.Write("Indique o ID do evento ou [0 para cancelar]: ");
-        }
-
         // Solicita um campo de texto (nome, email, etc.) com base no pedido fornecido
         public void SolicitarCampoTexto(string pedido)
         {
@@ -76,14 +70,6 @@ namespace GestorEventos.Inscricoes
         {
             Console.WriteLine();
             Console.WriteLine("Criacao de inscricao.");
-        }
-
-        // Solicita os dados para edicao de uma inscricao, indicando que o utilizador pode manter o valor atual
-        public void SolicitarDadosEdicao()
-        {
-            Console.WriteLine();
-            Console.WriteLine("Alteracao de inscricao.");
-            Console.WriteLine("Prima Enter para manter o valor atual.");
         }
 
         // Solicita o ID da inscricao para alterar ou cancelar
@@ -170,18 +156,6 @@ namespace GestorEventos.Inscricoes
         public void PedirConfirmacaoCancelamento()
         {
             Console.Write("Confirma o cancelamento da inscricao? (s/n): ");
-        }
-
-        // Exibe o resultado de uma operacao generica, mostrando a mensagem fornecida
-        public void MostrarResultadoOperacao(string mensagem)
-        {
-            Console.WriteLine(mensagem);
-        }
-
-        // Exibe uma mensagem de erro indicando que nao existem vagas suficientes ou que os dados introduzidos sao invalidos
-        public void MostrarErroSemVagas()
-        {
-            Console.WriteLine("Nao existem vagas suficientes ou os dados introduzidos sao invalidos.");
         }
 
         // Exibe uma mensagem de erro indicando que a inscricao selecionada nao existe ou que a operacao nao pode ser realizada
