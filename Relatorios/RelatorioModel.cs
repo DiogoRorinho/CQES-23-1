@@ -12,6 +12,9 @@ using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 
 namespace GestorEventos.Relatorios {
+    /* Model responsável pela geração de relatórios sobre eventos e inscrições.
+     * Trata persistência em SQLite, construção do conteúdo tabular, cálculo de ocupação
+     * e geração de ficheiros PDF. */
     class RelatorioModel {
         private readonly string connectionString;
         private readonly string pastaPdfs;
@@ -24,41 +27,20 @@ namespace GestorEventos.Relatorios {
             atualizadorEstados = new AtualizadorEstadosService();
         }
 
+        // Devolve a lista de eventos ordenada por ID para facilitar seleção em relatórios por evento.
         public List<Evento> ListarEventos() {
-            return ObterListaEventos();
+            return ObterListaEventosOrdenadosPorId();
         }
 
-        public List<Evento> ObterListaEventos() {
-            AtualizarEstados();
-            List<Evento> eventos = new List<Evento>();
-
-            using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
-            using SqliteCommand comando = new SqliteCommand(
-                @"SELECT id, nome, local, data, estado, capacidade
-                  FROM eventos
-                  ORDER BY data, nome;",
-                ligacao);
-            using SqliteDataReader leitor = comando.ExecuteReader();
-
-            while (leitor.Read()) {
-                eventos.Add(LerEvento(leitor));
-            }
-
-            return eventos;
-        }
-
+        // Constrói os dados do relatório de inscritos para o evento selecionado e gera o PDF correspondente.
         public DadosRelatorio ListarInscritosPorEvento(int idEvento) {
             return ObterDadosRelatorioEGerarPdf(idEvento);
-        }
-
-        public bool EventoExiste(int idEvento) {
-            AtualizarEstados();
-            return idEvento > 0 && ObterEventoPorId(idEvento) != null;
         }
 
         public DadosRelatorio ObterDadosRelatorioEGerarPdf(int idEvento) {
             AtualizarEstados();
             const string titulo = "Listagem de inscritos por evento";
+            DateTime dataGeracao = DateTime.Now;
             Evento? evento = ObterEventoPorId(idEvento);
             string conteudo;
 
@@ -68,47 +50,42 @@ namespace GestorEventos.Relatorios {
             }
             else {
                 List<Inscricao> inscricoes = ObterInscricoesPorEvento(idEvento);
-                conteudo = ConstruirConteudoInscritos(evento, inscricoes);
+                conteudo = ConstruirConteudoInscritos(evento, inscricoes, dataGeracao);
 
                 ultimoRelatorioGerado = CriarDocumentoPdf(
                     titulo,
-                    "relatorio-inscritos-evento-" + idEvento + ".pdf");
+                    string.Format(
+                        "relatorio-inscritos-evento-{0}-{1:yyyyMMdd-HHmmss}.pdf",
+                        idEvento,
+                        dataGeracao));
 
                 GerarFicheiroPdf(ultimoRelatorioGerado, conteudo);
             }
 
-            return new DadosRelatorio {
-                Titulo = titulo,
-                Conteudo = conteudo
-            };
+            return new DadosRelatorio {Titulo = titulo, Conteudo = conteudo};
         }
 
+        /* Constrói o relatório de ocupação dos eventos, considerando o estado adequado das inscrições
+         * para eventos ativos e terminados. */
         public DadosRelatorio ListarEventosComOcupacao() {
             return ObterDadosRelatorioOcupacaoEGerarPdf();
         }
 
         public DadosRelatorio ObterDadosRelatorioOcupacaoEGerarPdf() {
             AtualizarEstados();
-            string conteudo = ConstruirConteudoOcupacao();
-            ultimoRelatorioGerado = CriarDocumentoPdf("Eventos com ocupacao", "relatorio-ocupacao.pdf");
+            const string titulo = "Eventos com ocupacao";
+            DateTime dataGeracao = DateTime.Now;
+            string conteudo = ConstruirConteudoOcupacao(dataGeracao);
+            ultimoRelatorioGerado = CriarDocumentoPdf(
+                titulo,
+                string.Format("relatorio-ocupacao-{0:yyyyMMdd-HHmmss}.pdf", dataGeracao));
             GerarFicheiroPdf(ultimoRelatorioGerado, conteudo);
 
-            return new DadosRelatorio {
-                Titulo = "Eventos com ocupacao",
-                Conteudo = conteudo
-            };
+            return new DadosRelatorio {Titulo = titulo, Conteudo = conteudo};
         }
 
         public DocumentoPdf ObterUltimoRelatorioGerado() {
             return ultimoRelatorioGerado ?? CriarDocumentoPdf("Relatorio", "relatorio.pdf");
-        }
-
-        public string ObterConnectionString() {
-            return connectionString;
-        }
-
-        public string ObterPastaPdfs() {
-            return pastaPdfs;
         }
 
         private void AtualizarEstados() {
@@ -137,8 +114,25 @@ namespace GestorEventos.Relatorios {
             if (leitor.Read()) {
                 return LerEvento(leitor);
             }
-
             return null;
+        }
+
+        // Obtém da BD os eventos ordenados por ID, melhorando a legibilidade para o utilizador.
+        private List<Evento> ObterListaEventosOrdenadosPorId() {
+            List<Evento> eventos = new List<Evento>();
+
+            using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
+            using SqliteCommand comando = new SqliteCommand(
+                @"SELECT id, nome, local, data, estado, capacidade
+                  FROM eventos
+                  ORDER BY id;",
+                ligacao);
+            using SqliteDataReader leitor = comando.ExecuteReader();
+
+            while (leitor.Read()) {
+                eventos.Add(LerEvento(leitor));
+            }
+            return eventos;
         }
 
         private List<Inscricao> ObterInscricoesPorEvento(int idEvento) {
@@ -166,19 +160,22 @@ namespace GestorEventos.Relatorios {
                     Estado = LerTexto(leitor, "estado")
                 });
             }
-
             return inscricoes;
         }
 
-        private string ConstruirConteudoInscritos(Evento? evento, List<Inscricao> inscricoes) {
+        // Gera o conteúdo textual tabular do relatório de inscritos por evento.
+        private string ConstruirConteudoInscritos(Evento? evento, List<Inscricao> inscricoes, DateTime dataGeracao) {
             if (evento == null) {
                 return "Evento nao encontrado.";
             }
 
             StringBuilder conteudo = new StringBuilder();
+            conteudo.AppendLine(string.Format("Gerado em {0:dd/MM/yyyy HH:mm}", dataGeracao));
+            conteudo.AppendLine();
             conteudo.AppendLine(string.Format("Evento: {0}", evento.Nome));
             conteudo.AppendLine(string.Format("Local: {0}", evento.Local));
             conteudo.AppendLine(string.Format("Data: {0:dd/MM/yyyy}", evento.Data));
+            conteudo.AppendLine(string.Format("Estado: {0}", FormatarEstado(evento.Estado)));       //Acrescentado estado do evento
             conteudo.AppendLine(string.Format("Total de lugares inscritos: {0}", SomarQuantidadeInscricoes(inscricoes)));
 
             if (inscricoes.Count == 0) {
@@ -188,44 +185,115 @@ namespace GestorEventos.Relatorios {
 
             conteudo.AppendLine("Inscritos:");
 
+            const string formatoTabela = "{0,-3} | {1,-18} | {2,-24} | {3,-20} | {4,3}";
+
+            conteudo.AppendLine(string.Format(
+                formatoTabela,
+                "ID",
+                "Nome participante",
+                "Email participante",
+                "Estado",
+                "Qtd"));
+            conteudo.AppendLine(new string('-', 80));
+
             foreach (Inscricao inscricao in inscricoes) {
                 conteudo.AppendLine(string.Format(
-                    "- #{0} | {1} | {2} | {3} | {4}",
+                    formatoTabela,
                     inscricao.Id,
                     inscricao.NomeParticipante,
                     inscricao.EmailParticipante,
-                    inscricao.Estado,
+                    FormatarEstado(inscricao.Estado),
                     inscricao.Quantidade));
+            }
+            return conteudo.ToString();
+        }
+
+        // Gera o conteúdo textual tabular do relatório de ocupação dos eventos.
+        private string ConstruirConteudoOcupacao(DateTime dataGeracao) {
+            StringBuilder conteudo = new StringBuilder();
+            const string formatoTabela = "{0,4} | {1,-24} | {2,-16} | {3,-10} | {4,-10} | {5,10} | {6,9} | {7,9}";
+
+            conteudo.AppendLine(string.Format("Gerado em {0:dd/MM/yyyy HH:mm}", dataGeracao));
+            conteudo.AppendLine();
+            conteudo.AppendLine(string.Format(
+                formatoTabela,
+                "ID",
+                "Nome",
+                "Local",
+                "Data",
+                "Estado",
+                "Capacidade",
+                "Inscritos",
+                "Ocupacao"));
+            conteudo.AppendLine(new string('-', 113));
+
+            foreach (Evento evento in ObterListaEventosOrdenadosPorId()) {
+                int totalInscricoesOcupacao = SomarInscricoesParaOcupacao(evento, ObterInscricoesPorEvento(evento.Id));
+
+                decimal percentagem = evento.Capacidade == 0
+                    ? 0
+                    : (decimal)totalInscricoesOcupacao / evento.Capacidade * 100;
+
+                conteudo.AppendLine(string.Format(
+                    formatoTabela,
+                    evento.Id,
+                    LimitarTexto(evento.Nome, 24),
+                    LimitarTexto(evento.Local, 16),
+                    evento.Data.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture),
+                    FormatarEstado(evento.Estado),
+                    evento.Capacidade,
+                    totalInscricoesOcupacao,
+                    string.Format("{0:0.##}%", percentagem)));
             }
 
             return conteudo.ToString();
         }
 
-        private string ConstruirConteudoOcupacao() {
-            StringBuilder conteudo = new StringBuilder();
+        /* Calcula a ocupação efetiva do evento com base apenas no estado de inscrição
+         * relevante para o estado atual do evento. */
+        private int SomarInscricoesParaOcupacao(Evento evento, List<Inscricao> inscricoes) {
+            string estadoInscricaoConsiderado = ObterEstadoInscricaoConsideradoNaOcupacao(evento.Estado);
 
-            foreach (Evento evento in ObterListaEventos()) {
-                int totalInscricoesAtivas = 0;
-
-                foreach (Inscricao inscricao in ObterInscricoesPorEvento(evento.Id)) {
-                    if (inscricao.Estado == "ativa") {
-                        totalInscricoesAtivas += inscricao.Quantidade;
-                    }
-                }
-
-                decimal percentagem = evento.Capacidade == 0
-                    ? 0
-                    : (decimal)totalInscricoesAtivas / evento.Capacidade * 100;
-
-                conteudo.AppendLine(string.Format(
-                    "{0}: {1}/{2} vagas ocupadas ({3:0.##}%)",
-                    evento.Nome,
-                    totalInscricoesAtivas,
-                    evento.Capacidade,
-                    percentagem));
+            if (string.IsNullOrWhiteSpace(estadoInscricaoConsiderado)) {
+                return 0;
             }
 
-            return conteudo.ToString();
+            int total = 0;
+
+            foreach (Inscricao inscricao in inscricoes) {
+                if (string.Equals(inscricao.Estado, estadoInscricaoConsiderado, StringComparison.OrdinalIgnoreCase)) {
+                    total += inscricao.Quantidade;
+                }
+            }
+            return total;
+        }
+
+        /* Define que estado de inscrição deve ser considerado na ocupação,
+         * distinguindo eventos ativos de eventos terminados. */
+        private string ObterEstadoInscricaoConsideradoNaOcupacao(string estadoEvento) {
+            string estadoNormalizado = (estadoEvento ?? string.Empty).Trim().ToLowerInvariant();
+
+            if (estadoNormalizado == "ativo") {
+                return "ativa";
+            }
+
+            if (estadoNormalizado == "terminado") {
+                return "terminada";
+            }
+            return string.Empty;
+        }
+
+        private string LimitarTexto(string texto, int tamanhoMaximo) {
+            string textoSeguro = texto ?? string.Empty;
+
+            if (textoSeguro.Length <= tamanhoMaximo) {
+                return textoSeguro;
+            }
+
+            if (tamanhoMaximo <= 3) {
+                return textoSeguro.Substring(0, tamanhoMaximo);
+            }
+            return textoSeguro.Substring(0, tamanhoMaximo - 3) + "...";
         }
 
         private int SomarQuantidadeInscricoes(List<Inscricao> inscricoes) {
@@ -234,28 +302,7 @@ namespace GestorEventos.Relatorios {
             foreach (Inscricao inscricao in inscricoes) {
                 total += inscricao.Quantidade;
             }
-
             return total;
-        }
-
-        private SqliteConnection CriarLigacao() {
-            if (string.IsNullOrWhiteSpace(connectionString)) {
-                throw new InvalidOperationException("Connection string da base de dados nao configurada.");
-            }
-
-            string connectionStringResolvida = ResolverDataDirectory(connectionString);
-
-            return new SqliteConnection(connectionStringResolvida);
-        }
-
-        private string ResolverDataDirectory(string textoConnectionString) {
-            string? dataDirectory = Convert.ToString(AppDomain.CurrentDomain.GetData("DataDirectory"));
-
-            if (string.IsNullOrWhiteSpace(dataDirectory)) {
-                dataDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            }
-
-            return textoConnectionString.Replace("|DataDirectory|", dataDirectory);
         }
 
         private Evento LerEvento(SqliteDataReader leitor) {
@@ -275,7 +322,6 @@ namespace GestorEventos.Relatorios {
             if (leitor.IsDBNull(ordinal)) {
                 return 0;
             }
-
             return Convert.ToInt32(leitor.GetValue(ordinal), CultureInfo.InvariantCulture);
         }
 
@@ -285,7 +331,6 @@ namespace GestorEventos.Relatorios {
             if (leitor.IsDBNull(ordinal)) {
                 return string.Empty;
             }
-
             return Convert.ToString(leitor.GetValue(ordinal), CultureInfo.InvariantCulture) ?? string.Empty;
         }
 
@@ -308,10 +353,10 @@ namespace GestorEventos.Relatorios {
                 DateTime.TryParse(texto, CultureInfo.CurrentCulture, DateTimeStyles.None, out data)) {
                 return data;
             }
-
             return DateTime.MinValue;
         }
 
+        // Gera o ficheiro PDF do relatório, aplicando formatação monoespaçada e paginação automática.
         private void GerarFicheiroPdf(DocumentoPdf documentoPdf, string conteudo) {
             string? pastaDestino = Path.GetDirectoryName(documentoPdf.CaminhoFicheiro);
 
@@ -322,12 +367,10 @@ namespace GestorEventos.Relatorios {
             using PdfDocument documento = new PdfDocument();
             documento.Info.Title = documentoPdf.Titulo;
 
-            PdfPage pagina = documento.AddPage();
-            pagina.Size = PageSize.A4;
-
+            PdfPage pagina = CriarPaginaPdf(documento);
             XGraphics grafico = XGraphics.FromPdfPage(pagina);
-            XFont fonteTitulo = new XFont("Arial", 16, XFontStyleEx.Bold);
-            XFont fonteCorpo = new XFont("Arial", 10, XFontStyleEx.Regular);
+            XFont fonteTitulo = new XFont("Courier New", 16, XFontStyleEx.Bold);
+            XFont fonteCorpo = new XFont("Courier", 9, XFontStyleEx.Regular);
 
             const double margem = 40;
             const double alturaLinha = 14;
@@ -346,27 +389,35 @@ namespace GestorEventos.Relatorios {
                 if (y + alturaLinha > pagina.Height.Point - margem) {
                     grafico.Dispose();
 
-                    pagina = documento.AddPage();
-                    pagina.Size = PageSize.A4;
-
+                    pagina = CriarPaginaPdf(documento);
                     grafico = XGraphics.FromPdfPage(pagina);
                     y = margem;
                 }
 
-                grafico.DrawString(
-                    linha,
+                DesenharLinhaPdf(
+                    grafico,
                     fonteCorpo,
-                    XBrushes.Black,
-                    new XRect(margem, y, pagina.Width.Point - margem * 2, alturaLinha),
-                    XStringFormats.TopLeft);
+                    linha,
+                    margem,
+                    y,
+                    pagina.Width.Point - margem * 2,
+                    alturaLinha);
 
                 y += alturaLinha;
             }
-
             grafico.Dispose();
             documento.Save(documentoPdf.CaminhoFicheiro);
         }
 
+        // Cria uma nova página A4 em orientação horizontal para acomodar tabelas mais largas.
+        private PdfPage CriarPaginaPdf(PdfDocument documento) {
+            PdfPage pagina = documento.AddPage();
+            pagina.Size = PageSize.A4;
+            pagina.Orientation = PageOrientation.Landscape;
+            return pagina;
+        }
+
+        // Normaliza o texto e prepara a sua divisão em linhas compatíveis com a largura do PDF.
         private List<string> SepararLinhasPdf(string texto, XGraphics grafico, XFont fonte, double larguraMaxima) {
             List<string> linhas = new List<string>();
             string textoNormalizado = (texto ?? string.Empty)
@@ -376,10 +427,136 @@ namespace GestorEventos.Relatorios {
             foreach (string linhaOriginal in textoNormalizado.Split('\n')) {
                 linhas.AddRange(QuebrarLinhaPdf(linhaOriginal, grafico, fonte, larguraMaxima));
             }
-
             return linhas;
         }
 
+        // Normaliza o texto e prepara a sua divisão em linhas compatíveis com a largura do PDF.
+        private void DesenharLinhaPdf(XGraphics grafico, XFont fonte, string linha, double x, double y, double largura, double alturaLinha) {
+            if (TentarObterSegmentosEstado(linha, out string prefixo, out string estado, out string sufixo, out bool estadoVermelho)) {
+                XBrush pincelEstado = estadoVermelho ? XBrushes.Red : XBrushes.Black;
+
+                grafico.DrawString(
+                    prefixo,
+                    fonte,
+                    XBrushes.Black,
+                    new XRect(x, y, largura, alturaLinha),
+                    XStringFormats.TopLeft);
+
+                double larguraPrefixo = grafico.MeasureString(prefixo, fonte).Width;
+                grafico.DrawString(
+                    estado,
+                    fonte,
+                    pincelEstado,
+                    new XRect(x + larguraPrefixo, y, largura - larguraPrefixo, alturaLinha),
+                    XStringFormats.TopLeft);
+
+                double larguraEstado = grafico.MeasureString(estado, fonte).Width;
+                grafico.DrawString(
+                    sufixo,
+                    fonte,
+                    XBrushes.Black,
+                    new XRect(x + larguraPrefixo + larguraEstado, y, largura - larguraPrefixo - larguraEstado, alturaLinha),
+                    XStringFormats.TopLeft);
+
+                return;
+            }
+
+            grafico.DrawString(
+                linha,
+                fonte,
+                XBrushes.Black,
+                new XRect(x, y, largura, alturaLinha),
+                XStringFormats.TopLeft);
+        }
+
+        /* Tenta identificar o segmento correspondente ao estado numa linha textual,
+         * para permitir destaque visual sem perder o restante alinhamento da tabela. */
+        private bool TentarObterSegmentosEstado(string linha, out string prefixo, out string estado, out string sufixo, out bool estadoVermelho) {
+            prefixo = string.Empty;
+            estado = string.Empty;
+            sufixo = string.Empty;
+            estadoVermelho = false;
+
+            if (linha.StartsWith("Estado: ", StringComparison.OrdinalIgnoreCase)) {
+                prefixo = "Estado: ";
+                estado = linha.Substring(prefixo.Length);
+                sufixo = string.Empty;
+                estadoVermelho = !EstadoAtivo(estado);
+                return true;
+            }
+
+            if (!linha.Contains("|")) {
+                return false;
+            }
+
+            string[] partes = linha.Split('|');
+            int indiceCampoEstado = ObterIndiceCampoEstado(partes);
+            if (indiceCampoEstado < 0) {
+                return false;
+            }
+
+            string campoEstado = partes[indiceCampoEstado];
+            string estadoLimpo = campoEstado.Trim();
+
+            int inicioCampoEstado = 0;
+            for (int i = 0; i < indiceCampoEstado; i++) {
+                inicioCampoEstado += partes[i].Length + 1;
+            }
+
+            int espacosAntes = campoEstado.Length - campoEstado.TrimStart().Length;
+            int inicioEstado = inicioCampoEstado + espacosAntes;
+
+            prefixo = linha.Substring(0, inicioEstado);
+            estado = estadoLimpo;
+            sufixo = linha.Substring(inicioEstado + estadoLimpo.Length);
+            estadoVermelho = !EstadoAtivo(estadoLimpo);
+
+            return true;
+        }
+
+        // Procura a coluna onde se encontra o estado numa linha tabular separada por '|'.
+        private int ObterIndiceCampoEstado(string[] partes) {
+            for (int i = 0; i < partes.Length; i++) {
+                if (EstadoConhecido(partes[i].Trim())) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        // Identifica estados reconhecidos da aplicação para efeitos de formatação e destaque visual.
+        private bool EstadoConhecido(string estado) {
+            string estadoNormalizado = (estado ?? string.Empty)
+                .Trim()
+                .Replace('_', ' ')
+                .ToLowerInvariant();
+
+            return estadoNormalizado == "ativo" ||
+                estadoNormalizado == "cancelado" ||
+                estadoNormalizado == "terminado" ||
+                estadoNormalizado == "ativa" ||
+                estadoNormalizado == "cancelada" ||
+                estadoNormalizado == "cancelada por evento" ||
+                estadoNormalizado == "terminada";
+        }
+
+        private string FormatarEstado(string estado) {
+            string estadoNormalizado = (estado ?? string.Empty).Trim();
+
+            if (string.IsNullOrWhiteSpace(estadoNormalizado)) {
+                return string.Empty;
+            }
+
+            estadoNormalizado = estadoNormalizado.Replace('_', ' ').ToLowerInvariant();
+            return char.ToUpperInvariant(estadoNormalizado[0]) + estadoNormalizado.Substring(1);
+        }
+
+        private bool EstadoAtivo(string estado) {
+            string estadoNormalizado = (estado ?? string.Empty).Trim().ToLowerInvariant();
+            return estadoNormalizado == "ativo" || estadoNormalizado == "ativa";
+        }
+
+        // Identifica estados reconhecidos da aplicação para efeitos de formatação e destaque visual.
         private List<string> QuebrarLinhaPdf(string linhaOriginal, XGraphics grafico, XFont fonte, double larguraMaxima) {
             List<string> linhas = new List<string>();
 
@@ -403,14 +580,12 @@ namespace GestorEventos.Relatorios {
                 if (!string.IsNullOrEmpty(linhaAtual)) {
                     linhas.Add(linhaAtual);
                 }
-
                 linhaAtual = palavra;
             }
 
             if (!string.IsNullOrEmpty(linhaAtual)) {
                 linhas.Add(linhaAtual);
             }
-
             return linhas;
         }
     }

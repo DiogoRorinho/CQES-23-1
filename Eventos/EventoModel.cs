@@ -7,37 +7,35 @@ using GestorEventos.Partilhado.Servicos;
 using Microsoft.Data.Sqlite;
 
 namespace GestorEventos.Eventos {
-
+    /* Model responsável pela gestão de eventos.
+     * Trata regras de negócio, persistência em SQLite, atualização de estados
+     * e emissão de eventos de domínio associados à criação, alteração e cancelamento. */
     class EventoModel : IAtualizadorEstados {
         private readonly string connectionString;
         private readonly IAtualizadorEstados atualizadorEstados;
-
+        // Eventos de domínio usados para sinalizar alterações relevantes no estado dos eventos.
         public delegate void EventoCanceladoHandler(object sender, EventoCanceladoEventArgs e);
+        public delegate void EventoCriadoHandler(object sender, EventoCriadoEventArgs e);
+        public delegate void EventoAlteradoHandler(object sender, EventoAlteradoEventArgs e);
         public event EventoCanceladoHandler? EventoCancelado;
+        public event EventoCriadoHandler? EventoCriado;
+        public event EventoAlteradoHandler? EventoAlterado;
 
         public EventoModel() {
             connectionString = ConfiguracaoAplicacao.ObterConnectionString();
             atualizadorEstados = new AtualizadorEstadosService();
         }
 
+        // Garante a coerência dos estados de eventos e inscrições antes de operações relevantes.
         public void AtualizarEstados() {
             atualizadorEstados.AtualizarEstados();
         }
-    
-    /*class EventoModel {
-        private readonly string connectionString;
-
-        public delegate void EventoCanceladoHandler(object sender, EventoCanceladoEventArgs e);
-        public event EventoCanceladoHandler? EventoCancelado;
-
-        public EventoModel() {
-            connectionString = ConfiguracaoAplicacao.ObterConnectionString();
-        }*/
 
         public ResultadoOperacaoEvento CriarEvento(DadosEvento dados) {
             return ValidarERegistarEvento(dados);
         }
 
+        // Valida os dados recebidos e regista o novo evento na base de dados.
         public ResultadoOperacaoEvento ValidarERegistarEvento(DadosEvento dados) {
             if (dados == null) {
                 return CriarResultado(false, "Dados do evento invalidos.");
@@ -49,17 +47,24 @@ namespace GestorEventos.Eventos {
                 return CriarResultado(false, "Dados do evento invalidos.");
             }
 
+            if (!DataEventoEhFutura(dados.Data)) {
+                return CriarResultado(false, "A data do evento deve ser futura.");
+            }
+
             using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
             using SqliteTransaction transacao = ligacao.BeginTransaction();
             using SqliteCommand comando = ligacao.CreateCommand();
             comando.Transaction = transacao;
             comando.CommandText = @"
                 INSERT INTO eventos (nome, local, data, estado, capacidade)
-                VALUES (@nome, @local, @data, 'ativo', @capacidade);";
+                VALUES (@nome, @local, @data, 'ativo', @capacidade);
+                SELECT last_insert_rowid();";
 
             AdicionarParametrosEvento(comando, dados);
-            comando.ExecuteNonQuery();
+            int idEventoCriado = Convert.ToInt32(comando.ExecuteScalar(), CultureInfo.InvariantCulture);
             transacao.Commit();
+
+            DispararEventoCriado(idEventoCriado, dados);
 
             return CriarResultado(true, "Evento criado com sucesso.");
         }
@@ -68,21 +73,38 @@ namespace GestorEventos.Eventos {
             return ObterListaEventos();
         }
 
+        // Devolve apenas eventos ativos, ordenados por ID para facilitar operações de seleção.
+        public List<Evento> ListarEventosAtivos() {
+            return ObterListaEventos("ativo", ordenarPorId: true);
+        }
+
         public List<Evento> ObterListaEventos() {
+            return ObterListaEventos(null, ordenarPorId: false);
+        }
+
+        /* Método interno de acesso à BD para obter eventos, com filtro opcional por estado
+         * e critério de ordenação adaptado ao contexto da operação. */
+        private List<Evento> ObterListaEventos(string? estado, bool ordenarPorId) {
             List<Evento> eventos = new List<Evento>();
             AtualizarEstados();
             using SqliteConnection ligacao = BaseDados.CriarLigacaoAberta();
             using SqliteCommand comando = ligacao.CreateCommand();
-            comando.CommandText = @"
+            string ordem = ordenarPorId ? "id" : "data, id";
+            comando.CommandText = string.Format(@"
                 SELECT id, nome, local, data, estado, capacidade
-                FROM eventos
-                ORDER BY data, id;";
+                FROM eventos{0}
+                ORDER BY id;",
+                string.IsNullOrWhiteSpace(estado) ? string.Empty : " WHERE estado = @estado",
+                ordem);
+
+            if (!string.IsNullOrWhiteSpace(estado)) {
+                comando.Parameters.AddWithValue("@estado", estado);
+            }
 
             using SqliteDataReader leitor = comando.ExecuteReader();
             while (leitor.Read()) {
                 eventos.Add(MapearEvento(leitor));
             }
-
             return eventos;
         }
 
@@ -108,10 +130,10 @@ namespace GestorEventos.Eventos {
             if (leitor.Read()) {
                 return MapearEvento(leitor);
             }
-
             return null;
         }
 
+        // Atualiza os dados de um evento existente e dispara o evento de domínio respetivo.
         public ResultadoOperacaoEvento AlterarEvento(int idEvento, DadosEvento dados) {
             return ValidarEAtualizarEvento(idEvento, dados);
         }
@@ -126,6 +148,10 @@ namespace GestorEventos.Eventos {
                 string.IsNullOrWhiteSpace(dados.Local) ||
                 dados.Capacidade <= 0) {
                 return CriarResultado(false, "Dados do evento invalidos.");
+            }
+
+            if (!DataEventoEhFutura(dados.Data)) {
+                return CriarResultado(false, "A data do evento deve ser futura.");
             }
 
             int quantidadeInscrita = ObterQuantidadeInscritaAtiva(idEvento);
@@ -155,9 +181,12 @@ namespace GestorEventos.Eventos {
                 return CriarResultado(false, "Evento nao encontrado.");
             }
 
+            DispararEventoAlterado(idEvento, dados);
+
             return CriarResultado(true, "Evento alterado com sucesso.");
         }
 
+        // Marca o evento como cancelado na BD e dispara o evento de domínio associado.
         public ResultadoOperacaoEvento CancelarEvento(int idEvento) {
             AtualizarEstados();
             Evento? eventoCancelado = ObterEvento(idEvento);
@@ -167,6 +196,9 @@ namespace GestorEventos.Eventos {
             }
 
             if (!string.Equals(eventoCancelado.Estado, "ativo", StringComparison.OrdinalIgnoreCase)) {
+                if (string.Equals(eventoCancelado.Estado, "terminado", StringComparison.OrdinalIgnoreCase)) {
+                    return CriarResultado(false, "Evento ja se encontra terminado.");
+                }
                 return CriarResultado(false, "Evento ja se encontra cancelado.");
             }
 
@@ -222,6 +254,8 @@ namespace GestorEventos.Eventos {
             return Convert.ToInt32(resultado);
         }
 
+        /* DispararEventoCriado, DispararEventoAlterado e DispararEventoCancelado
+         * Encapsulam o disparo dos eventos de domínio para manter a emissão centralizada no Model. */
         private void DispararEventoCancelado(Evento eventoCancelado) {
             EventoCanceladoEventArgs dadosCancelamento = new EventoCanceladoEventArgs(
                 eventoCancelado.Id,
@@ -232,8 +266,32 @@ namespace GestorEventos.Eventos {
             EventoCancelado?.Invoke(this, dadosCancelamento);
         }
 
-        public string ObterConnectionString() {
-            return connectionString;
+        private void DispararEventoCriado(int idEvento, DadosEvento dados) {
+            EventoCriadoEventArgs dadosCriacao = new EventoCriadoEventArgs(
+                idEvento,
+                dados.Nome,
+                dados.Local,
+                dados.Data,
+                dados.Capacidade,
+                DateTime.Now);
+
+            EventoCriado?.Invoke(this, dadosCriacao);
+        }
+
+        private void DispararEventoAlterado(int idEvento, DadosEvento dados) {
+            EventoAlteradoEventArgs dadosAlteracao = new EventoAlteradoEventArgs(
+                idEvento,
+                dados.Nome,
+                dados.Local,
+                dados.Data,
+                dados.Capacidade,
+                DateTime.Now);
+
+            EventoAlterado?.Invoke(this, dadosAlteracao);
+        }
+
+        private static bool DataEventoEhFutura(DateTime dataEvento) {
+            return dataEvento.Date > DateTime.Today;
         }
 
         private static ResultadoOperacaoEvento CriarResultado(bool sucesso, string mensagem) {

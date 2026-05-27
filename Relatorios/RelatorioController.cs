@@ -3,6 +3,8 @@ using GestorEventos.Aplicacao;
 using GestorEventos.Partilhado;
 
 namespace GestorEventos.Relatorios {
+    /* Recolhe previamente as inscrições que irão transitar para terminada,
+     * para permitir emitir depois eventos de domínio com os respetivos dados. */
     class RelatorioController {
         private readonly AplicacaoController aplicacaoController;
         private readonly RelatorioView view;
@@ -15,6 +17,7 @@ namespace GestorEventos.Relatorios {
             this.model = model;
         }
 
+        // Mantém o submenu de Relatórios ativo até o utilizador regressar ao menu principal.
         public void MostrarMenuModulo() {
             regressarMenuPrincipal = false;
 
@@ -50,36 +53,62 @@ namespace GestorEventos.Relatorios {
             }
         }
 
+        // Coordena a geração do relatório de inscritos para um evento escolhido pelo utilizador.
         public void ApresentarRelatorioInscritosPorEvento() {
-            view.MostrarListaEventos(model.ListarEventos());
+            List<Evento> listaEventos = model.ListarEventos();
+            view.MostrarListaEventos(listaEventos);
 
-            view.SolicitarIdEvento();
-
-            int idEvento;
-            if (!int.TryParse(Console.ReadLine(), out idEvento)) {
-                view.MostrarMensagem("ID de evento invalido.");
+            int? idEvento = LerIdEventoValidoOuSair(listaEventos);
+            if (idEvento == null) {
+                view.MostrarMensagem("Operacao cancelada.");
                 return;
             }
 
-            if (idEvento <= 0) {
-                view.MostrarMensagem("ID de evento invalido.");
-                return;
-            }
-
-            if (!model.EventoExiste(idEvento)) {
-                view.MostrarMensagem("Evento nao encontrado.");
-                return;
-            }
-
-            SelecionarEvento(idEvento);
+            SelecionarEvento(idEvento.Value);
         }
 
+        // Solicita ao Model os dados do relatório e envia-os à View para apresentação e referência ao PDF gerado.
         public void SelecionarEvento(int idEvento) {
             DadosRelatorio dadosRelatorio = model.ListarInscritosPorEvento(idEvento);
             DocumentoPdf relatorioPdf = model.ObterUltimoRelatorioGerado();
             view.ApresentarRelatorioEPdf(dadosRelatorio, relatorioPdf);
         }
 
+        /* Mantém o utilizador num ciclo local de validação até escolher um evento válido
+         * ou introduzir 0 para cancelar a operação. */
+        private int? LerIdEventoValidoOuSair(List<Evento> listaEventos) {
+            while (true) {
+                view.SolicitarIdEvento();
+                string entrada = Console.ReadLine() ?? string.Empty;
+
+                if (!int.TryParse(entrada, out int idEvento) || idEvento < 0) {
+                    view.MostrarMensagem("Opcao invalida.");
+                    continue;
+                }
+
+                if (idEvento == 0) {
+                    return null;
+                }
+
+                if (!EventoExisteNaLista(listaEventos, idEvento)) {
+                    view.MostrarMensagem("ID invalido.");
+                    continue;
+                }
+                return idEvento;
+            }
+        }
+
+        // Valida o ID do evento com base na lista já recebida do Model, evitando nova consulta desnecessária.
+        private bool EventoExisteNaLista(List<Evento> listaEventos, int idEvento) {
+            foreach (Evento evento in listaEventos) {
+                if (evento.Id == idEvento) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Gera o relatório de ocupação dos eventos e apresenta o respetivo PDF ao utilizador.
         public void ApresentarRelatorioEventosComOcupacao() {
             DadosRelatorio dadosRelatorio = model.ListarEventosComOcupacao();
             DocumentoPdf relatorioPdf = model.ObterUltimoRelatorioGerado();

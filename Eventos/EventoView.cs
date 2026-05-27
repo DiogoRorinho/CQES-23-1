@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using GestorEventos.Partilhado;
 
 namespace GestorEventos.Eventos {
+    /* View responsável pela apresentação do módulo de Eventos em consola:
+     * menus, formulários, listagens, mensagens e confirmações. */
     class EventoView {
         public void MostrarMenuEventos() {
             Console.WriteLine();
@@ -37,17 +39,14 @@ namespace GestorEventos.Eventos {
         }
 
         public void SolicitarIdEventoAlteracao() {
-            Console.Write("Indique o ID do evento a alterar [0 para cancelar]: "); // Editado para permitir cancelar a operação de alteração.
-        }
-
-        public void SolicitarIdEventoCancelamento() {
-            Console.Write("Indique o ID do evento a cancelar [0 para cancelar]: "); // Editado para permitir cancelar a operação de cancelamento.
+            Console.Write("Introduza um ID valido ou 0 para sair: ");
         }
 
         public void PedirConfirmacaoCancelamento() {
             Console.Write("Confirma o cancelamento do evento? (s/n): ");
         }
 
+        // Apresenta os eventos em formato tabular, destacando a vermelho estados não ativos.
         public void MostrarListaEventos(List<Evento> listaEventos) {
             Console.WriteLine();
             Console.WriteLine("Lista de eventos:");
@@ -57,17 +56,33 @@ namespace GestorEventos.Eventos {
                 return;
             }
 
+            Console.WriteLine("ID  | Nome                 | Data       | Local                | Cap. | Estado");
+            Console.WriteLine(new string('-', 80));
+
             foreach (Evento evento in listaEventos) {
+                bool destacar = !string.Equals(evento.Estado, "ativo", StringComparison.OrdinalIgnoreCase);
+                ConsoleColor corOriginal = Console.ForegroundColor;
+
+                if (destacar) {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                }
+
                 Console.WriteLine(string.Format(
-                    "{0} - {1} | {2:dd/MM/yyyy} | {3} | capacidade: {4}",
+                    "{0,-3} | {1,-20} | {2:dd/MM/yyyy} | {3,-20} | {4,4} | {5}",
                     evento.Id,
-                    evento.Nome,
+                    LimitarTexto(evento.Nome, 20),
                     evento.Data,
-                    evento.Local,
-                    evento.Capacidade));
+                    LimitarTexto(evento.Local, 20),
+                    evento.Capacidade,
+                    evento.Estado));
+
+                if (destacar) {
+                    Console.ForegroundColor = corOriginal;
+                }
             }
         }
 
+        // Mostra os dados atuais do evento antes da recolha de alterações.
         public void MostrarDadosParaEdicao(Evento dadosEvento) {
             Console.WriteLine();
             Console.WriteLine(string.Format(
@@ -79,7 +94,19 @@ namespace GestorEventos.Eventos {
                 dadosEvento.Capacidade));
             Console.WriteLine("Prima Enter para manter o valor atual.");
         }
-
+        
+        // Mostra os dados atuais do evento antes da recolha de alterações.
+        public void MostrarDadosParaCancelamento(Evento dadosEvento) {
+                    Console.WriteLine();
+                    Console.WriteLine(string.Format(
+                        "Evento selecionado: {0} - {1} | {2:dd/MM/yyyy} | {3} | capacidade: {4}",
+                        dadosEvento.Id,
+                        dadosEvento.Nome,
+                        dadosEvento.Data,
+                        dadosEvento.Local,
+                        dadosEvento.Capacidade));
+        }
+        
         public void MostrarResultadoOperacao(string mensagem) {
             Console.WriteLine(mensagem);
         }
@@ -94,6 +121,19 @@ namespace GestorEventos.Eventos {
 
         public void FinalizarOperacaoMenu() {
             Console.WriteLine();
+        }
+
+        // Garante alinhamento da tabela em consola, limitando textos longos às larguras previstas.
+        private static string LimitarTexto(string texto, int limite) {
+            if (string.IsNullOrWhiteSpace(texto)) {
+                return string.Empty;
+            }
+
+            if (texto.Length <= limite) {
+                return texto;
+            }
+
+            return texto.Substring(0, limite - 3) + "...";
         }
     }
 }

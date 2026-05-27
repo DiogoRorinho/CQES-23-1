@@ -1,9 +1,11 @@
 using System;
 
 namespace GestorEventos.Aplicacao {
+    /* View responsável pela apresentação do menu principal e das mensagens
+     * globais de arranque, erro, regresso e encerramento da aplicação. */
     class MenuPrincipalView {
         public void ApresentarBoasVindas() {
-            Console.WriteLine("Bem-vindo ao gestor de eventos.");
+            Console.WriteLine("Bem-vindo ao gestor de eventos.\nDesenvolvida por CQES23+1.");
         }
 
         public void MostrarMenuPrincipal() {
@@ -32,6 +34,7 @@ namespace GestorEventos.Aplicacao {
             Console.WriteLine("A regressar ao menu principal.");
         }
 
+        // Garante separação visual entre iterações do menu na consola.
         public void FinalizarOperacaoMenu() {
             Console.WriteLine();
         }
