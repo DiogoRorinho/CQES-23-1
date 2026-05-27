@@ -81,13 +81,22 @@ namespace GestorEventos.Relatorios {
 
         // Trata cada linha do relatório, destacando a vermelho estados não ativos quando presentes.
         private void MostrarLinhaRelatorio(string linha) {
-            if (TentarObterSegmentosEstado(linha, out string prefixo, out string estado, out string sufixo, out bool estadoVermelho)) {
-                Console.Write(prefixo);
-                EscreverEstado(estado, !estadoVermelho);
-                Console.WriteLine(sufixo);
+            if (TentarObterSegmentosEstado(linha, out _, out _, out _, out bool estadoVermelho) && estadoVermelho) {
+                EscreverLinhaComCor(linha, true);
                 return;
             }
             Console.WriteLine(linha);
+        }
+
+        private void EscreverLinhaComCor(string linha, bool vermelho) {
+            ConsoleColor corOriginal = Console.ForegroundColor;
+
+            if (vermelho) {
+                Console.ForegroundColor = ConsoleColor.Red;
+            }
+
+            Console.WriteLine(linha);
+            Console.ForegroundColor = corOriginal;
         }
 
         /* Identifica o segmento correspondente ao estado numa linha textual,
