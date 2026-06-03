@@ -70,7 +70,7 @@ namespace GestorEventos.Inscricoes {
             List<EventoDisponivel> eventosDisponiveis = model.ListarEventosDisponiveis();
 
             if (eventosDisponiveis == null || eventosDisponiveis.Count == 0) {
-                view.MostrarMensagem("Nao existem eventos registados.");
+                view.MostrarMensagem("Nao existem eventos ativos registados.");
                 return;
             }
 
@@ -95,26 +95,48 @@ namespace GestorEventos.Inscricoes {
                 return;
             }
 
-            view.MostrarMensagem("Vagas disponiveis para este evento: " + eventoSelecionado.Disponibilidade);
-
             DadosInscricao dados = new DadosInscricao {
                 IdEvento = idEvento,
                 NomeParticipante = LerTextoNaoVazio("Nome do inscrito: "),
                 EmailParticipante = LerTextoNaoVazio("Email do inscrito: "),
-                IdadeParticipante = LerInteiroPositivo("Idade do inscrito: "),
-                Quantidade = LerQuantidadeComLimite(
-                    "Numero de inscricoes pretendido: ",
-                    eventoSelecionado.Disponibilidade)
+                IdadeParticipante = LerInteiroPositivo("Idade do inscrito: ")
             };
 
-            ResultadoCriacaoInscricao resultado = model.CriarInscricao(dados);
+            while (true) {
+                int vagasDisponiveis = ObterVagasLivresEvento(idEvento);
 
-            if (resultado.Sucesso && resultado.BilhetePdf != null) {
-                view.MostrarResultadoOperacaoEBilhete(resultado.Mensagem, resultado.BilhetePdf);
-                return;
+                if (vagasDisponiveis <= 0) {
+                    view.MostrarMensagem("Nao existem vagas disponiveis para este evento.");
+                    view.MostrarMensagem("Criacao de inscricao cancelada.");
+                    return;
+                }
+
+                view.MostrarMensagem("Vagas disponiveis para este evento: " + vagasDisponiveis);
+                int quantidade = LerQuantidadeComLimite(
+                    "Numero de inscricoes pretendido (0 para cancelar): ",
+                    vagasDisponiveis);
+
+                if (quantidade == 0) {
+                    view.MostrarMensagem("Criacao de inscricao cancelada.");
+                    return;
+                }
+
+                dados.Quantidade = quantidade;
+                ResultadoCriacaoInscricao resultado = model.CriarInscricao(dados);
+
+                if (resultado.Sucesso && resultado.BilhetePdf != null) {
+                    view.MostrarResultadoOperacaoEBilhete(resultado.Mensagem, resultado.BilhetePdf);
+                    return;
+                }
+
+                view.MostrarMensagem(resultado.Mensagem);
+
+                if (!MensagemIndicaFaltaVagas(resultado.Mensagem)) {
+                    return;
+                }
+
+                view.MostrarMensagem("Introduza uma nova quantidade ou 0 para cancelar.");
             }
-
-            view.MostrarMensagem(resultado.Mensagem);
         }
 
         // Lista inscrições ativas, valida a escolha do utilizador e coordena a alteração da inscrição selecionada.
@@ -123,6 +145,12 @@ namespace GestorEventos.Inscricoes {
             if (inscricoesAtivas.Count == 0) {
                 view.MostrarMensagem("Nao existem inscricoes ativas para alterar.");
                 return;
+            }
+
+            List<EventoDisponivel> eventosDisponiveis = model.ListarEventosDisponiveis();
+            if (eventosDisponiveis.Count > 0) {
+                view.MostrarMensagem("Eventos ativos e vagas disponiveis:");
+                view.MostrarListaEventos(eventosDisponiveis);
             }
 
             view.MostrarListaInscricoes(inscricoesAtivas);
@@ -172,7 +200,11 @@ namespace GestorEventos.Inscricoes {
                 view.SolicitarCampoTexto(pedido);
                 string entrada = LerEntrada();
 
-                if (int.TryParse(entrada, out int quantidade) && quantidade > 0) {
+                if (int.TryParse(entrada, out int quantidade) && quantidade >= 0) {
+                    if (quantidade == 0) {
+                        return 0;
+                    }
+
                     if (quantidade <= vagasDisponiveis) {
                         return quantidade;
                     }
@@ -183,8 +215,13 @@ namespace GestorEventos.Inscricoes {
                     continue;
                 }
 
-                view.MostrarMensagem("Introduza um numero inteiro positivo.");
+                view.MostrarMensagem("Introduza um numero inteiro positivo ou 0 para cancelar.");
             }
+        }
+
+        private bool MensagemIndicaFaltaVagas(string mensagem) {
+            return !string.IsNullOrWhiteSpace(mensagem) &&
+                   mensagem.IndexOf("vagas", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private int LerQuantidadeAlteravelComLimite(string pedido, int valorAtual, int limiteQuantidade) {
@@ -251,7 +288,7 @@ namespace GestorEventos.Inscricoes {
                 string entrada = LerEntrada();
 
                 if (!int.TryParse(entrada, out int idInscricao) || idInscricao < 0) {
-                    view.MostrarMensagem("Opcao invalida.");
+                    view.MostrarMensagem("Introduza um ID valido ou 0 para sair.");
                     continue;
                 }
 
@@ -261,7 +298,7 @@ namespace GestorEventos.Inscricoes {
 
                 Inscricao? inscricao = EncontrarInscricaoPorId(inscricoesAtivas, idInscricao);
                 if (inscricao == null) {
-                    view.MostrarMensagem("ID invalido.");
+                    view.MostrarMensagem("Introduza um ID valido ou 0 para sair.");
                     continue;
                 }
 

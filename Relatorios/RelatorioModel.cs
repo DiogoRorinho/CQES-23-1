@@ -16,14 +16,10 @@ namespace GestorEventos.Relatorios {
      * Trata persistência em SQLite, construção do conteúdo tabular, cálculo de ocupação
      * e geração de ficheiros PDF. */
     class RelatorioModel {
-        private readonly string connectionString;
-        private readonly string pastaPdfs;
         private readonly IAtualizadorEstados atualizadorEstados;
         private DocumentoPdf? ultimoRelatorioGerado;
 
         public RelatorioModel() {
-            connectionString = ConfiguracaoAplicacao.ObterConnectionString();
-            pastaPdfs = ConfiguracaoAplicacao.ObterPastaPdfs();
             atualizadorEstados = new AtualizadorEstadosService();
         }
 
@@ -432,32 +428,13 @@ namespace GestorEventos.Relatorios {
 
         // Normaliza o texto e prepara a sua divisão em linhas compatíveis com a largura do PDF.
         private void DesenharLinhaPdf(XGraphics grafico, XFont fonte, string linha, double x, double y, double largura, double alturaLinha) {
-            if (TentarObterSegmentosEstado(linha, out string prefixo, out string estado, out string sufixo, out bool estadoVermelho)) {
-                XBrush pincelEstado = estadoVermelho ? XBrushes.Red : XBrushes.Black;
-
+            if (TentarObterSegmentosEstado(linha, out _, out _, out _, out bool estadoVermelho) && estadoVermelho) {
                 grafico.DrawString(
-                    prefixo,
+                    linha,
                     fonte,
-                    XBrushes.Black,
+                    XBrushes.Red,
                     new XRect(x, y, largura, alturaLinha),
                     XStringFormats.TopLeft);
-
-                double larguraPrefixo = grafico.MeasureString(prefixo, fonte).Width;
-                grafico.DrawString(
-                    estado,
-                    fonte,
-                    pincelEstado,
-                    new XRect(x + larguraPrefixo, y, largura - larguraPrefixo, alturaLinha),
-                    XStringFormats.TopLeft);
-
-                double larguraEstado = grafico.MeasureString(estado, fonte).Width;
-                grafico.DrawString(
-                    sufixo,
-                    fonte,
-                    XBrushes.Black,
-                    new XRect(x + larguraPrefixo + larguraEstado, y, largura - larguraPrefixo - larguraEstado, alturaLinha),
-                    XStringFormats.TopLeft);
-
                 return;
             }
 

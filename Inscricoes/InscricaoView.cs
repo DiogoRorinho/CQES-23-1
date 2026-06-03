@@ -65,11 +65,11 @@ namespace GestorEventos.Inscricoes {
         }
 
         public void SolicitarIdInscricaoAlteracao() {
-            Console.Write("Indique o ID da inscricao a alterar: ");
+            Console.Write("Introduza um ID valido ou 0 para sair: ");
         }
 
         public void SolicitarIdInscricaoCancelamento() {
-            Console.Write("Indique o ID da inscricao a cancelar: ");
+            Console.Write("Introduza um ID valido ou 0 para sair: ");
         }
 
         public void MostrarMensagem(string mensagem) {
@@ -105,18 +105,17 @@ namespace GestorEventos.Inscricoes {
             Console.WriteLine(new string('-', 105));
 
             foreach (Inscricao inscricao in listaInscricoes) {
-                string prefixo = string.Format(
-                    "{0,-5} {1,-8} {2,-24} {3,-30} {4,6} {5,6} ",
+                string linha = string.Format(
+                    formatoTabela,
                     inscricao.Id,
                     inscricao.IdEvento,
                     LimitarTexto(inscricao.NomeParticipante, 24),
                     LimitarTexto(inscricao.EmailParticipante, 30),
                     inscricao.IdadeParticipante,
-                    inscricao.Quantidade);
+                    inscricao.Quantidade,
+                    FormatarEstado(inscricao.Estado));
 
-                Console.Write(prefixo);
-                EscreverEstado(FormatarEstado(inscricao.Estado), EstadoAtivo(inscricao.Estado));
-                Console.WriteLine();
+                EscreverLinhaComCor(linha, !EstadoAtivo(inscricao.Estado));
             }
         }
 
@@ -152,17 +151,6 @@ namespace GestorEventos.Inscricoes {
             }
 
             Console.WriteLine(linha);
-            Console.ForegroundColor = corOriginal;
-        }
-
-        private void EscreverEstado(string estado, bool ativo) {
-            ConsoleColor corOriginal = Console.ForegroundColor;
-
-            if (!ativo) {
-                Console.ForegroundColor = ConsoleColor.Red;
-            }
-
-            Console.Write(estado);
             Console.ForegroundColor = corOriginal;
         }
 

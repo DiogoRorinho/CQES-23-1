@@ -16,8 +16,6 @@ namespace GestorEventos.Inscricoes {
      * Trata regras de negócio, persistência em SQLite, validação de disponibilidade,
      * geração de comprovativos PDF e emissão de eventos de domínio associados às inscrições. */
     class InscricaoModel {
-        private readonly string connectionString;
-        private readonly string pastaPdfs;
         private readonly IAtualizadorEstados atualizadorEstados;
         // Eventos de domínio usados para sinalizar criação, alteração e cancelamento de inscrições.
         public delegate void InscricaoCriadaHandler(object sender, InscricaoCriadaEventArgs e);
@@ -29,18 +27,16 @@ namespace GestorEventos.Inscricoes {
 
         // Construtor que inicializa as configuracoes necessarias para o modelo de inscricao.
         public InscricaoModel() {
-            connectionString = ConfiguracaoAplicacao.ObterConnectionString();
-            pastaPdfs = ConfiguracaoAplicacao.ObterPastaPdfs();
             atualizadorEstados = new AtualizadorEstadosService();
         }
 
-        // Devolve os eventos elegíveis para inscrição, já com disponibilidade calculada.
+        // Devolve os eventos ativos, já com disponibilidade calculada.
         public List<EventoDisponivel> ListarEventosDisponiveis() {
             return ObterEventosComDisponibilidade();
         }
 
         /* Obtém da BD os eventos ativos e calcula a disponibilidade a partir da capacidade
-         * e do número de inscrições ativas já registadas. */
+         * e do número de inscrições ativas já registadas, incluindo eventos sem vagas livres. */
         public List<EventoDisponivel> ObterEventosComDisponibilidade() {
             AtualizarEstados();
             List<EventoDisponivel> eventos = new List<EventoDisponivel>();
@@ -64,7 +60,6 @@ namespace GestorEventos.Inscricoes {
                    AND i.estado = 'ativa'
                 WHERE e.estado = 'ativo'
                 GROUP BY e.id, e.nome, e.local, e.data, e.estado, e.capacidade
-                HAVING e.capacidade - COALESCE(SUM(i.quantidade), 0) > 0
                 ORDER BY e.id;";
 
             using SqliteDataReader leitor = comando.ExecuteReader();
